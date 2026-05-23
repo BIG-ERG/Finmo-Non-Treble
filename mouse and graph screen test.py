@@ -8,6 +8,7 @@ import serial
 import time
 import pyqtgraph as pg
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton,QWidget,QGridLayout,QGraphicsProxyWidget
+from PyQt6.QtCore import QTimer
 import sys
 
 x= []
@@ -32,7 +33,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("UI")
-        self.setFixedSize(1024, 600) #size of window
+        self.setFixedSize(500, 600) #size of window
         self.graphicslayout = pg.GraphicsLayoutWidget()
         
         self.setCentralWidget(self.graphicslayout)
@@ -64,8 +65,6 @@ class MainWindow(QMainWindow):
             self.pen1 = pg.mkPen(color=("#FF0000FF"))#line color
             self.pen2 = pg.mkPen(color=("#FFFFFFFF"))#line color
             self.pen3 = pg.mkPen(color=("#FFFF00FF"))#line color
-            x.append(xAbs)
-            y1.append(yAbs)
             y2 = [0]
             y3 = [0]
             self.p1.plot(x, y1, pen=self.pen1,name="Pen")
@@ -74,7 +73,7 @@ class MainWindow(QMainWindow):
 
 #ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
 
-time.sleep(2)   # allow Arduino reset
+#time.sleep(2)   # allow Arduino reset
 
 counter = 0
 
@@ -85,7 +84,13 @@ for device in devices:
 
 #-------------------------------------------------------------------------
 
-device = evdev.InputDevice('/dev/input/event14') #change eventn to correct peripheral
+app = QApplication(sys.argv)
+window = MainWindow()
+window.show()
+
+
+
+device = evdev.InputDevice('/dev/input/event19') #change eventn to correct peripheral
 
 def integrator(distance, time):       #returns velocity in mm/s
     return distance / time
@@ -139,3 +144,23 @@ for event in device.read_loop():
             #ser.write(f'x:{xAbs}<,y:{yAbs}\n'.encode())
             counter = 0
             print(f"{xAbs:8.2f}| {yAbs:8.2f}| {xVel:8.2f}| {yVel:8.2f}| {xAcc:8.2f}| {yAcc:8.2f}")
+
+def update_graph():
+    global t
+
+    x.append(xAbs)
+    y1.append(yAbs)
+
+    t += 1
+
+timer = QTimer()
+timer.timeout.connect(update_graph)
+
+# update every 16 ms (~60 FPS)
+timer.start(200)
+
+# ----------------------------
+# START EVENT LOOP ONCE
+# ----------------------------
+
+sys.exit(app.exec())
