@@ -16,7 +16,8 @@ yMouse = []
 xMouse = []
 xPen = []
 
-ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+time.sleep(2)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -65,7 +66,7 @@ class MainWindow(QMainWindow):
     def plot1(self):#plotitem
         self.p1 = self.graphicslayout.addPlot(row=0, col=0,rowspan =4,colspan=2) #rowspan = aantal rijen hoote
         self.p1.setTitle("Plot 1")
-        self.p1.showGrid(x=True, y=True)
+        self.p1.showGrid(x=False, y=False)
         self.p1.addLegend()
         self.pen1 = pg.mkPen(color=("#FF0000FF"))#line color
         self.pen2 = pg.mkPen(color=("#FFFFFFFF"))#line color
@@ -251,20 +252,33 @@ def mouseReader():
         if event.type == evdev.ecodes.SYN_REPORT:           #if sync event happens i.e. every time mouse updates
 
             ser.write(f'x:{xAbs}\n'.encode())
-            print(f"{xAbs:8.2f}| {yAbs:8.2f}")
+            # print(f"{xAbs:8.2f}| {yAbs:8.2f}")
             xMouse.append(xAbs)
             yMouse.append(yAbs)
 
+def serialReader():
+    while True:
+        line = ser.readline().decode().strip()
+
+        try:
+            value = float(line)
+            xPen.append(value)
+            print(value)
+        except ValueError:
+            pass
 
 threading.Thread(
     target=mouseReader,
     daemon = True
 ).start()
 
+threading.Thread(
+    target=serialReader,
+    daemon=True
+).start()
+
 app=QApplication(sys.argv)
 window = MainWindow()
 window.show()
-
-xPen.append(int(ser.readline().decode().strip()))
 
 sys.exit(app.exec())
