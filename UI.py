@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
         # Voorbeelddata
         self.graphicslayout.setBackground("#000000FF")
     def plot1(self):#plotitem
-        self.p1 = self.graphicslayout.addPlot(row=0, col=0,rowspan =3,colspan=2) #rowspan = aantal rijen hoote
+        self.p1 = self.graphicslayout.addPlot(row=0, col=0,rowspan =4,colspan=2) #rowspan = aantal rijen hoote
         self.p1.setTitle("Plot 1")
         self.p1.showGrid(x=True, y=True)
         self.p1.addLegend()
@@ -68,61 +68,122 @@ class MainWindow(QMainWindow):
     def create_button1(self):
         
         self.button1 = QPushButton("mode 1")# title botton
+        self.button1.setFixedSize(204, 150)
         self.proxy1 = QGraphicsProxyWidget()
         self.proxy1.setWidget(self.button1)
         self.graphicslayout.addItem(self.proxy1, 2, 2) # row, col , rowspan,colspan
         self.button1.setCheckable(True)
         self.button1.clicked.connect(self.the_button1_was_toggled)
+        self.button1.setStyleSheet("""
+            QPushButton {
+            background-color: #0080FF;
+            color: white;
+            }
+            QPushButton:checked {
+            background-color: #232FD7;
+            }
+            """)
     def the_button1_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
     def create_button2(self):
         
         self.button2 = QPushButton("mode 2")# title botton
+        self.button2.setFixedSize(204, 150)
         self.proxy2 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy2.setWidget(self.button2)
         self.graphicslayout.addItem(self.proxy2, 2, 3) # row, col , rowspan,colspan
         self.button2.setCheckable(True)
         self.button2.clicked.connect(self.the_button2_was_toggled)
+        self.button2.setStyleSheet("""
+            QPushButton {
+            background-color: #0080FF;
+            color: white;
+            }
+            QPushButton:checked {
+            background-color: #232FD7;
+            }
+            """)
     def the_button2_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
     def create_button3(self):
         
         self.button3 = QPushButton("mode 3")# title botton
+        self.button3.setFixedSize(204, 150)
         self.proxy3 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy3.setWidget(self.button3)
         self.graphicslayout.addItem(self.proxy3, 2, 4) # row, col , rowspan,colspan
         self.button3.setCheckable(True)
         self.button3.clicked.connect(self.the_button3_was_toggled)
+        self.button3.setStyleSheet("""
+            QPushButton {
+            background-color: #0080FF;
+            color: white;
+            }
+            QPushButton:checked {
+            background-color: #232FD7;
+            }
+            """)
     def the_button3_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
     def create_button4(self):
         
         self.button4 = QPushButton("reset")# title botton
+        self.button4.setFixedSize(204, 150)
         self.proxy4 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy4.setWidget(self.button4)
         self.graphicslayout.addItem(self.proxy4, 3, 2) # row, col , rowspan,colspan
         self.button4.setCheckable(True)
         self.button4.clicked.connect(self.the_button4_was_toggled)
+        self.button4.setStyleSheet("""
+            QPushButton {
+            background-color: #0080FF;
+            color: white;
+            }
+            QPushButton:checked {
+            background-color: #232FD7;
+            }
+            """)
     def the_button4_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
     def create_button5(self):
         
         self.button5 = QPushButton("calibration")# title botton
+        self.button5.setFixedSize(204, 150)
         self.proxy5 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy5.setWidget(self.button5)
         self.graphicslayout.addItem(self.proxy5, 3, 3) # row, col , rowspan,colspan
         self.button5.setCheckable(True)
         self.button5.clicked.connect(self.the_button5_was_toggled)
+        self.button5.setStyleSheet("""
+            QPushButton {
+            background-color: #0080FF;
+            color: white;
+            }
+            QPushButton:checked {
+            background-color: #232FD7;
+            }
+            """)
     def the_button5_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
     def create_button6(self):
         
         self.button6 = QPushButton("filter")# title botton
+        self.button6.setFixedSize(204, 150)
         self.proxy6 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy6.setWidget(self.button6)
         self.graphicslayout.addItem(self.proxy6, 3, 4) # row, col , rowspan,colspan
         self.button6.setCheckable(True)
         self.button6.clicked.connect(self.the_button6_was_toggled)
+        self.button6.setStyleSheet("""
+            QPushButton {
+            background-color: #0080FF;
+            
+            color: white;
+            }
+            QPushButton:checked {
+            background-color: #232FD7;
+            }
+            """)
     def the_button6_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
     
