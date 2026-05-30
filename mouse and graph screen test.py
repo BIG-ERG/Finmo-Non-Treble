@@ -12,8 +12,11 @@ from PyQt6.QtCore import QTimer
 import sys
 import threading
 
-y1 = []
-x1 = []
+yMouse = []
+xMouse = []
+xPen = []
+
+ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -56,7 +59,8 @@ class MainWindow(QMainWindow):
 
     
     def updateGraph(self):
-        self.curve1.setData(x1, y1)
+        self.curve1.setData(xMouse, yMouse)
+        self.curve2.setData(xPen, yMouse)
 
     def plot1(self):#plotitem
         self.p1 = self.graphicslayout.addPlot(row=0, col=0,rowspan =4,colspan=2) #rowspan = aantal rijen hoote
@@ -66,7 +70,9 @@ class MainWindow(QMainWindow):
         self.pen1 = pg.mkPen(color=("#FF0000FF"))#line color
         self.pen2 = pg.mkPen(color=("#FFFFFFFF"))#line color
         self.pen3 = pg.mkPen(color=("#FFFF00FF"))#line color
-        self.curve1 = self.p1.plot(x1, y1, pen=self.pen1,name="Pen")
+        self.curve1 = self.p1.plot(xMouse, yMouse, pen=self.pen1,name="Mouse")
+        self.curve2 = self.p1.plot(xPen, yMouse, pen=self.pen2, name="Correction")\
+        
     def plot2(self):
 
         self.p2 = self.graphicslayout.addPlot(row=0, col=2,colspan=3,rowspan=2)
@@ -228,8 +234,6 @@ def mouseReader():
     global xAbs, yAbs, xRel, yRel
     for event in device.read_loop():
 
-        # now = time.perf_counter
-
         if event.type == ecodes.EV_KEY:
             if event.code == ecodes.BTN_RIGHT and event.value == 1:
                 print("Right click detected — stopping")
@@ -246,10 +250,10 @@ def mouseReader():
 
         if event.type == evdev.ecodes.SYN_REPORT:           #if sync event happens i.e. every time mouse updates
 
-            #ser.write(f'x:{xAbs}<,y:{yAbs}\n'.encode())
+            ser.write(f'x:{xAbs}\n'.encode())
             print(f"{xAbs:8.2f}| {yAbs:8.2f}")
-            x1.append(xAbs)
-            y1.append(yAbs)
+            xMouse.append(xAbs)
+            yMouse.append(yAbs)
 
 
 threading.Thread(
@@ -260,5 +264,7 @@ threading.Thread(
 app=QApplication(sys.argv)
 window = MainWindow()
 window.show()
+
+xPen.append(int(ser.readline().decode().strip()))
 
 sys.exit(app.exec())

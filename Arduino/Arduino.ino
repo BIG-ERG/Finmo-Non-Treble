@@ -91,6 +91,7 @@ void loop() {
     float dt = (huidigeTijd - vorigeTijd) / 1000.0;
     if (dt > 0) {
       float fout  = setpoint - analogRead(analogPin);
+      serial.println(analogRead(analogPin));
       
       if(fout < 0){
         changeDirRight();
