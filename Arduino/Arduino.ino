@@ -91,7 +91,6 @@ void loop() {
     float dt = (huidigeTijd - vorigeTijd) / 1000.0;
     if (dt > 0) {
       float fout  = setpoint - analogRead(analogPin);
-      serial.println(analogRead(analogPin));
       
       if(fout < 0){
         changeDirRight();
@@ -116,7 +115,10 @@ void loop() {
       // Zet om naar PWM (0-255)
       int pwmWaarde = (int)(output /5 * 255);
       analogWrite(PWM_PIN, pwmWaarde);
-      Serial.println(analogRead(analogPin));
+      if (millis() - vorigeSerialTijd > 50) {
+          Serial.println(analogRead(analogPin));
+          vorigeSerialTijd = millis();
+      }
     }
   }
   vorigeTijd = huidigeTijd;
