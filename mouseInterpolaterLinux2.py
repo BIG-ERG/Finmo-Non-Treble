@@ -29,10 +29,7 @@ yRel = 0
 xAbs = 0
 yAbs = 0
 
-device = evdev.InputDevice('/dev/input/event19') #change eventn to correct peripheral
-
-def integrator(distance, time):       #returns velocity in mm/s
-    return distance / time
+device = evdev.InputDevice('/dev/input/event0') #change eventn to correct peripheral
 
 def cpiToMM(dots):
     CPI = 1000
