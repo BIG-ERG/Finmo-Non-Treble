@@ -35,7 +35,7 @@ float x = 0;
 float y = 0;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(PWM_PIN, OUTPUT);
   pinMode(dir1, OUTPUT);
   pinMode(dir2, OUTPUT);
@@ -115,7 +115,7 @@ void loop() {
       // Zet om naar PWM (0-255)
       int pwmWaarde = (int)(output /5 * 255);
       analogWrite(PWM_PIN, pwmWaarde);
-      if (millis() - vorigeSerialTijd > 50) {
+      if (millis() - vorigeSerialTijd > 200) {
           Serial.println(analogRead(analogPin));
           vorigeSerialTijd = millis();
       }
