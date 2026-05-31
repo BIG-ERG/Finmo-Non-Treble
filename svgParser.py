@@ -1,12 +1,12 @@
 from svgpathtools import svg2paths, path
 import matplotlib.pyplot as plt
 
-straight = r"C:\Users\alecl\De Haagse Hogeschool\Sophia Elzinga (24022772) - project 4\documenten\Code\svg\straight.svg"
-squiggly = r"C:\Users\alecl\De Haagse Hogeschool\Sophia Elzinga (24022772) - project 4\documenten\Code\svg\squiggly.svg"
-ziggert = r"C:\Users\alecl\De Haagse Hogeschool\Sophia Elzinga (24022772) - project 4\documenten\Code\svg\ziggert.svg"
+straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo.svg"
+squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
+ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
 
 
-paths, attributes = svg2paths(ziggert)
+paths, attributes = svg2paths(straight)
 
 print(paths)
 
@@ -29,6 +29,4 @@ for path in paths:
 
             points.append(x)
 
-for i in range(len(points)):
-    print(points[i])
-
+print(paths)

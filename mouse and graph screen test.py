@@ -11,13 +11,55 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton,QWidget,QGrid
 from PyQt6.QtCore import QTimer
 import sys
 import threading
+from svgpathtools import svg2paths, path
+import matplotlib.pyplot as plt
+
+#-----------------------------------paths----------------------------------------#
+straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo.svg"
+squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
+ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
+
+xPath1 = []
+yPath1 = []
+xPath2 = []
+yPath2 = []
+
+def svgToCoord(path):
+    global xPath1, yPath1, xPath2, yPath2
+
+    xPath1.clear()
+    yPath1.clear()
+    xPath2.clear()
+    yPath2.clear()
+
+    paths, attributes = svg2paths(path)
+
+    path = paths[0]
+
+    for seg_num, segment in enumerate(path):
+
+        xList = xPath1 if seg_num == 0 else xPath2
+        yList = yPath1 if seg_num == 0 else yPath2
+
+        for i in range(100):
+            t = i / 99
+            point = segment.point(t)
+
+            xList.append(point.real)
+            yList.append(point.imag)
+#--------------------------------------------------------------------------------#
+
+#-----------------------------------serial-setup-arduino-------------------------#
+ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+time.sleep(2)
+#--------------------------------------------------------------------------------#
+
+#-----------------------------------UI-setup-------------------------------------#
 
 yMouse = []
 xMouse = []
 xPen = []
-
-ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
-time.sleep(2)
+yPen = []
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -61,7 +103,7 @@ class MainWindow(QMainWindow):
     
     def updateGraph(self):
         self.curve1.setData(xMouse, yMouse)
-        self.curve2.setData(xPen, yMouse)
+        self.curve2.setData(xPen, yPen)
 
     def plot1(self):#plotitem
         self.p1 = self.graphicslayout.addPlot(row=0, col=0,rowspan =4,colspan=2) #rowspan = aantal rijen hoote
@@ -71,8 +113,10 @@ class MainWindow(QMainWindow):
         self.pen1 = pg.mkPen(color=("#FF0000FF"))#line color
         self.pen2 = pg.mkPen(color=("#FFFFFFFF"))#line color
         self.pen3 = pg.mkPen(color=("#FFFF00FF"))#line color
-        self.curve1 = self.p1.plot(xMouse, yMouse, pen=self.pen1,name="Mouse")
-        self.curve2 = self.p1.plot(xPen, yMouse, pen=self.pen2, name="Correction")\
+        self.curve1 = self.p1.plot(xMouse, yMouse, pen=self.pen1,name="Hand")
+        self.curve2 = self.p1.plot(xPen, yPen, pen=self.pen2, name="Correction")
+        self.curve3 = self.p1.plot(xPath1, yPath1, pen=self.pen3, name="Path")
+        self.curve4 = self.p1.plot(xPath2, yPath2, pen=self.pen3, name="Path")
         
     def plot2(self):
 
@@ -88,9 +132,10 @@ class MainWindow(QMainWindow):
         y2 = [2, 1, 4, 1]
         self.p2.plot(x, y1, pen=self.pen4,name="divertion")
         self.p2.plot(x, y2, pen=self.pen5,name="correction")
+    
     def create_button1(self):
         
-        self.button1 = QPushButton("mode 1")# title botton
+        self.button1 = QPushButton("Straight")# title botton
         self.button1.setFixedSize(204, 150)
         self.proxy1 = QGraphicsProxyWidget()
         self.proxy1.setWidget(self.button1)
@@ -108,9 +153,13 @@ class MainWindow(QMainWindow):
             """)
     def the_button1_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
+        svgToCoord(straight)
+        self.curve3.setData(xPath1, yPath1)
+        self.curve4.setData(xPath2, yPath2)
+        
     def create_button2(self):
         
-        self.button2 = QPushButton("mode 2")# title botton
+        self.button2 = QPushButton("Squiggly")# title botton
         self.button2.setFixedSize(204, 150)
         self.proxy2 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy2.setWidget(self.button2)
@@ -128,9 +177,14 @@ class MainWindow(QMainWindow):
             """)
     def the_button2_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
+        svgToCoord(squiggly)
+        self.curve3.setData(xPath1, yPath1)
+        self.curve4.setData(xPath2, yPath2)
+
+        
     def create_button3(self):
         
-        self.button3 = QPushButton("mode 3")# title botton
+        self.button3 = QPushButton("Zig-Zag")# title botton
         self.button3.setFixedSize(204, 150)
         self.proxy3 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy3.setWidget(self.button3)
@@ -148,6 +202,11 @@ class MainWindow(QMainWindow):
             """)
     def the_button3_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
+        svgToCoord(ziggert)
+        self.curve3.setData(xPath1, yPath1)
+        self.curve4.setData(xPath2, yPath2)
+
+
     def create_button4(self):
         
         self.button4 = QPushButton("reset")# title botton
@@ -210,13 +269,15 @@ class MainWindow(QMainWindow):
     def the_button6_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
 
-#---------------------------·LIST-DEVICES---------------------------------
-devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-for device in devices:
-     print(device.path, device.name, device.phys)
+#--------------------------------------------------------------------------------#
 
-#-------------------------------------------------------------------------
+#---------------------------·LIST-DEVICES-(TROUBLESHOOTING)----------------------#
+# devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+# for device in devices:
+#      print(device.path, device.name, device.phys)
+#--------------------------------------------------------------------------------#
 
+#---------------------------MOUSE-READER-----------------------------------------#
 xRel = 0
 yRel = 0
 
@@ -228,6 +289,12 @@ device = evdev.InputDevice('/dev/input/event4') #change eventn to correct periph
 def cpiToMM(dots):
     CPI = 1000
     return dots*25.4 / CPI
+
+def adsToMM(input):
+    sliderLength = 60.0
+    temp = sliderLength / 1024
+    mm = (input * temp) - 30
+    return mm
 
 print("xAbs:   |yAbs:    ")
 
@@ -262,11 +329,14 @@ def serialReader():
 
         try:
             value = float(line)
-            xPen.append(value)
-            print(value)
+            xPen.append(adsToMM(value))
+            yPen.append(yAbs)
         except ValueError:
             pass
 
+#--------------------------------------------------------------------------------#
+
+#---------------------------------THREADING--------------------------------------#
 threading.Thread(
     target=mouseReader,
     daemon = True
@@ -277,8 +347,12 @@ threading.Thread(
     daemon=True
 ).start()
 
+#--------------------------------------------------------------------------------#
+
+#---------------------------------MAIN-------------------------------------------#
 app=QApplication(sys.argv)
 window = MainWindow()
 window.show()
 
 sys.exit(app.exec())
+#--------------------------------------------------------------------------------#
