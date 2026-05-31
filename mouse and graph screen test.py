@@ -1,7 +1,3 @@
-#pip install evdev
-#sudo usermod -a -G groupName userName
-#   do line above if no device pop up
-
 import evdev
 from evdev import ecodes
 import serial
@@ -13,6 +9,15 @@ import sys
 import threading
 from svgpathtools import svg2paths, path
 import matplotlib.pyplot as plt
+
+
+#-----------------------------------mouse-setup----------------------------------#
+xRel = 0
+yRel = 0
+
+xAbs = 0
+yAbs = 0
+#--------------------------------------------------------------------------------#
 
 #-----------------------------------paths----------------------------------------#
 straight1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo1.svg"
@@ -35,26 +40,6 @@ def svgToCoord(path1, path2):
     xPath2.clear()
     yPath2.clear()
 
-    paths, attributes = svg2paths(path1)
-
-    path = paths[0]
-
-    for path in paths:
-
-        for segment in path:
-
-            for i in range(100):
-
-                t = i / 99
-
-                point = segment.point(t)
-
-                x = point.real
-                y = point.imag
-
-                xPath1.append(x)
-                yPath1.append(y)
-
     paths, attributes = svg2paths(path2)
 
     path = paths[0]
@@ -70,10 +55,31 @@ def svgToCoord(path1, path2):
                 point = segment.point(t)
 
                 x = point.real
-                y = point.imag
+                y = -1 * point.imag
+
+                xPath1.append(x)
+                yPath1.append(y)
+
+    paths, attributes = svg2paths(path1)
+
+    path = paths[0]
+
+    for path in paths:
+
+        for segment in path:
+
+            for i in range(100):
+
+                t = i / 99
+
+                point = segment.point(t)
+
+                x = point.real
+                y = -1 * point.imag
 
                 xPath2.append(x)
                 yPath2.append(y)
+
 #--------------------------------------------------------------------------------#
 
 #-----------------------------------serial-setup-arduino-------------------------#
@@ -126,7 +132,7 @@ class MainWindow(QMainWindow):
         #self.v = self.graphicslayout.addViewBox(row=1, col=1)
         # Voorbeelddata
         self.graphicslayout.setBackground("#000000FF")
-
+        self.showFullScreen()
     
     def updateGraph(self):
         self.curve1.setData(xMouse, yMouse)
@@ -137,7 +143,7 @@ class MainWindow(QMainWindow):
         self.p1.setTitle("Plot 1")
         self.p1.showGrid(x=False, y=False)
         self.p1.setXRange(0,210, padding = 0)
-        self.p1.setYRange(0,297, padding = 0)
+        self.p1.setYRange(0,-297, padding = 0)
         self.p1.addLegend()
         self.pen1 = pg.mkPen(color=("#FF0000FF"))#line color
         self.pen2 = pg.mkPen(color=("#FFFFFFFF"))#line color
@@ -181,10 +187,13 @@ class MainWindow(QMainWindow):
             }
             """)
     def the_button1_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
+        global xAbs, yAbs
         print("Button state:", checked)
         svgToCoord(straight1, straight2)
         self.curve3.setData(xPath1, yPath1)
         self.curve4.setData(xPath2, yPath2)
+        xAbs = xPath2[99]
+        yAbs = yPath2[99]
         
     def create_button2(self):
         
@@ -209,6 +218,8 @@ class MainWindow(QMainWindow):
         svgToCoord(squiggly1, squiggly2)
         self.curve3.setData(xPath1, yPath1)
         self.curve4.setData(xPath2, yPath2)
+        xAbs = xPath2[99]
+        yAbs = yPath2[99]
 
         
     def create_button3(self):
@@ -234,7 +245,8 @@ class MainWindow(QMainWindow):
         svgToCoord(ziggert1, ziggert2)
         self.curve3.setData(xPath1, yPath1)
         self.curve4.setData(xPath2, yPath2)
-
+        xAbs = xPath2[99]
+        yAbs = yPath2[99]
 
     def create_button4(self):
         
@@ -256,6 +268,17 @@ class MainWindow(QMainWindow):
             """)
     def the_button4_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
+        xPath1.clear()
+        yPath1.clear()
+        xPath2.clear()
+        yPath2.clear()
+        xPen.clear()
+        yPen.clear()
+        xMouse.clear()
+        yMouse.clear()
+        self.curve3.setData(xPath1, yPath1)
+        self.curve4.setData(xPath2, yPath2)
+
     def create_button5(self):
         
         self.button5 = QPushButton("calibration")# title botton
@@ -297,6 +320,11 @@ class MainWindow(QMainWindow):
             """)
     def the_button6_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
+        sys.exit()
+
+#--------------------------------------------------------------------------------#
+
+#---------------------------MOVEMENT-LOGIC---------------------------------------#
 
 #--------------------------------------------------------------------------------#
 
@@ -307,11 +335,6 @@ class MainWindow(QMainWindow):
 #--------------------------------------------------------------------------------#
 
 #---------------------------MOUSE-READER-----------------------------------------#
-xRel = 0
-yRel = 0
-
-xAbs = 0
-yAbs = 0
 
 device = evdev.InputDevice('/dev/input/event4') #change eventn to correct peripheral
 
@@ -358,7 +381,7 @@ def serialReader():
 
         try:
             value = float(line)
-            xPen.append(adsToMM(value))
+            xPen.append(adsToMM(value)+xAbs)
             yPen.append(yAbs)
         except ValueError:
             pass

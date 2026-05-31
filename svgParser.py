@@ -24,6 +24,7 @@ def svgToCoords(path1, path2):
     paths, attributes = svg2paths(path1)
 
     path = paths[0]
+    print(path)
 
     for path in paths:
 
@@ -61,4 +62,8 @@ def svgToCoords(path1, path2):
                 xPath2.append(x)
                 yPath2.append(y)
 
-svgToCoords(straight1, straight2)
+svgToCoords(squiggly1, squiggly2)
+print(yPath1[0])
+print(yPath1[99])
+print(yPath2[0])
+print(yPath2[99])
