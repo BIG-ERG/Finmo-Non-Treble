@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    inkscape:version="1.4 (86a8ad7, 2024-10-11)"
-   sodipodi:docname="ziggert.svg"
+   sodipodi:docname="ziggert2.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -39,7 +39,7 @@
      inkscape:groupmode="layer"
      id="layer1">
     <path
-       d="m 102.39375,132.82083 v -15.875 L 86.518749,101.07083 99.747915,87.841666 M 105.03958,82.55 l 13.22917,-13.229167 -15.875,-15.875 V 37.570834"
+       d="m 109.50413,218.68131 v -15.875 l -15.874987,-15.875 13.229157,-13.22916"
        style="fill:none;stroke:#000000;stroke-width:0.132292;stroke-linecap:round;stroke-linejoin:round"
        id="path1" />
   </g>
