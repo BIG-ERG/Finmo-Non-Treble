@@ -1,7 +1,7 @@
 from svgpathtools import svg2paths, path
 import matplotlib.pyplot as plt
 
-straight1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo1.svg"
+straight1 = r"C:\Users\alecl\De Haagse Hogeschool\Sophia Elzinga (24022772) - project 4\documenten\Code\Finmo-Non-Treble\svg\noHomo1.svg"
 straight2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo2.svg"
 squiggly1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly1.svg"
 squiggly2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly2.svg"

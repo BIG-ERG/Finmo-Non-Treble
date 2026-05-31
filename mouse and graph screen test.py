@@ -9,6 +9,7 @@ import sys
 import threading
 from svgpathtools import svg2paths, path
 import matplotlib.pyplot as plt
+import RPi.GPIO as GPIO
 
 
 #-----------------------------------mouse-setup----------------------------------#
@@ -20,65 +21,34 @@ yAbs = 0
 #--------------------------------------------------------------------------------#
 
 #-----------------------------------paths----------------------------------------#
-straight1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo1.svg"
-straight2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo2.svg"
-squiggly1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly1.svg"
-squiggly2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly2.svg"
-ziggert1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert1.svg"
-ziggert2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert2.svg"
+#ui cant show hole in path but pen will apply it regardless
+straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/straight.svg"
+squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
+ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
 
-xPath1 = []
-yPath1 = []
-xPath2 = []
-yPath2 = []
+xPath = []
+yPath = []
+lookup = []
 
-def svgToCoord(path1, path2):
-    global xPath1, yPath1, xPath2, yPath2
+def svgToCoord(path):
+    global lookup, xPath, yPath
+    lookup.clear()
+    xPath.clear()
+    yPath.clear()   
+    lookup[:] = [-1] * 297
 
-    xPath1.clear()
-    yPath1.clear()
-    xPath2.clear()
-    yPath2.clear()
-
-    paths, attributes = svg2paths(path2)
-
-    path = paths[0]
+    paths, _ = svg2paths(path)
 
     for path in paths:
-
         for segment in path:
-
             for i in range(100):
-
                 t = i / 99
-
-                point = segment.point(t)
-
-                x = point.real
-                y = -1 * point.imag
-
-                xPath1.append(x)
-                yPath1.append(y)
-
-    paths, attributes = svg2paths(path1)
-
-    path = paths[0]
-
-    for path in paths:
-
-        for segment in path:
-
-            for i in range(100):
-
-                t = i / 99
-
-                point = segment.point(t)
-
-                x = point.real
-                y = -1 * point.imag
-
-                xPath2.append(x)
-                yPath2.append(y)
+                pt = segment.point(t)
+                y_mm = round(pt.imag)
+                xPath.append(pt.real)
+                yPath.append(pt.imag)
+                if 0 <= y_mm < 297:
+                    lookup[y_mm] = pt.real
 
 #--------------------------------------------------------------------------------#
 
@@ -143,15 +113,14 @@ class MainWindow(QMainWindow):
         self.p1.setTitle("Plot 1")
         self.p1.showGrid(x=False, y=False)
         self.p1.setXRange(0,210, padding = 0)
-        self.p1.setYRange(0,-297, padding = 0)
+        self.p1.setYRange(0,297, padding = 0)
         self.p1.addLegend()
         self.pen1 = pg.mkPen(color=("#FF0000FF"))#line color
         self.pen2 = pg.mkPen(color=("#FFFFFFFF"))#line color
         self.pen3 = pg.mkPen(color=("#FFFF00FF"))#line color
         self.curve1 = self.p1.plot(xMouse, yMouse, pen=self.pen1,name="Hand")
         self.curve2 = self.p1.plot(xPen, yPen, pen=self.pen2, name="Correction")
-        self.curve3 = self.p1.plot(xPath1, yPath1, pen=self.pen3, name="Path")
-        self.curve4 = self.p1.plot(xPath2, yPath2, pen=self.pen3)
+        self.curve3 = self.p1.plot(xPath, yPath, pen=self.pen3, name="Path")
         
     def plot2(self):
 
@@ -189,11 +158,10 @@ class MainWindow(QMainWindow):
     def the_button1_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         global xAbs, yAbs
         print("Button state:", checked)
-        svgToCoord(straight1, straight2)
-        self.curve3.setData(xPath1, yPath1)
-        self.curve4.setData(xPath2, yPath2)
-        xAbs = xPath2[99]
-        yAbs = yPath2[99]
+        svgToCoord(straight)
+        self.curve3.setData(xPath, yPath)
+        xAbs = 0 #to be implemented: set xAbs and yAbs to the end point of the path, so that the mouse starts at the end of the path when the button is pressed
+        yAbs = 0
         
     def create_button2(self):
         
@@ -215,12 +183,8 @@ class MainWindow(QMainWindow):
             """)
     def the_button2_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
-        svgToCoord(squiggly1, squiggly2)
-        self.curve3.setData(xPath1, yPath1)
-        self.curve4.setData(xPath2, yPath2)
-        xAbs = xPath2[99]
-        yAbs = yPath2[99]
-
+        svgToCoord(squiggly)
+        self.curve3.setData(xPath, yPath)
         
     def create_button3(self):
         
@@ -242,11 +206,8 @@ class MainWindow(QMainWindow):
             """)
     def the_button3_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
-        svgToCoord(ziggert1, ziggert2)
-        self.curve3.setData(xPath1, yPath1)
-        self.curve4.setData(xPath2, yPath2)
-        xAbs = xPath2[99]
-        yAbs = yPath2[99]
+        svgToCoord(ziggert)
+        self.curve3.setData(xPath, yPath)
 
     def create_button4(self):
         
@@ -268,16 +229,13 @@ class MainWindow(QMainWindow):
             """)
     def the_button4_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
-        xPath1.clear()
-        yPath1.clear()
-        xPath2.clear()
-        yPath2.clear()
+        xPath.clear()
+        yPath.clear()
         xPen.clear()
         yPen.clear()
         xMouse.clear()
         yMouse.clear()
-        self.curve3.setData(xPath1, yPath1)
-        self.curve4.setData(xPath2, yPath2)
+        self.curve3.setData(xPath, yPath)
 
     def create_button5(self):
         
@@ -318,14 +276,74 @@ class MainWindow(QMainWindow):
             background-color: #232FD7;
             }
             """)
-    def the_button6_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
-        print("Button state:", checked)
-        sys.exit()
+    def the_button6_was_toggled(self)
+        QApplication.quit()
 
 #--------------------------------------------------------------------------------#
 
-#---------------------------MOVEMENT-LOGIC---------------------------------------#
+#---------------------------SERVO-LOGIC------------------------------------------#
+# ---------- Configuratie ----------
+SERVO_PIN  = 18         # PWM-capabele GPIO pin
+BUTTON_PIN = 17         # GPIO pin voor de drukknop
+PWM_FREQ   = 50         # MG90S werkt op 50 Hz
 
+# Hoeken voor de twee toestanden (pas aan op jouw mechanisme)
+ANGLE_REST   = 0        # pen ligt (rusttoestand)
+ANGLE_ACTIVE = 60       # pen opgetild (actieve toestand)
+
+DEBOUNCE_MS = 200       # ontdender-tijd in milliseconden
+
+pwm = None
+
+pen_is_up = False   # begint in rusttoestand (pen ligt)
+
+def angle_to_duty(angle):
+    """Zet een hoek (0-180°) om naar duty cycle (%) voor 50 Hz PWM."""
+    return 2.5 + (angle / 180.0) * 10.0
+
+def set_angle(pwm, angle):
+    pwm.ChangeDutyCycle(angle_to_duty(angle))
+    time.sleep(0.4)              # tijd om naar positie te bewegen
+    pwm.ChangeDutyCycle(0)       # signaal uit -> voorkomt jitter/zoemen
+
+def button_pressed(channel):
+    global pen_is_up
+    if pen_is_up:
+        print("Knop ingedrukt -> pen neerleggen")
+        set_angle(pwm, ANGLE_REST)
+        pen_is_up = False
+    else:
+        print("Knop ingedrukt -> pen optillen")
+        set_angle(pwm, ANGLE_ACTIVE)
+        pen_is_up = True
+
+def servoUp():
+    set_angle(pwm, ANGLE_REST)
+
+def servoDown():
+    set_angle(pwm, ANGLE_ACTIVE)
+
+def servoSetup():
+    global pwm
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(SERVO_PIN, GPIO.OUT)
+    GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+    pwm = GPIO.PWM(SERVO_PIN, PWM_FREQ)
+    pwm.start(0)
+#--------------------------------------------------------------------------------#
+
+#---------------------------MOVEMENT-LOGIC---------------------------------------#
+#based on lookup table and mouse movement, calculate the correction and apply it to the pen position
+def offset(xMouse, yMouse):
+    if 0 <= yMouse < 297:
+        if lookup[yMouse] != -1:
+            xOffset = lookup[yMouse] - xMouse
+            servoDown()
+            return xOffset
+        else:
+            servoUp()
+            return 0
 #--------------------------------------------------------------------------------#
 
 #---------------------------·LIST-DEVICES-(TROUBLESHOOTING)----------------------#
@@ -402,6 +420,7 @@ threading.Thread(
 #--------------------------------------------------------------------------------#
 
 #---------------------------------MAIN-------------------------------------------#
+servoSetup()
 app=QApplication(sys.argv)
 window = MainWindow()
 window.show()
