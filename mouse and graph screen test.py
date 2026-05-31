@@ -53,7 +53,7 @@ def svgToCoord(path):
 #--------------------------------------------------------------------------------#
 
 #-----------------------------------serial-setup-arduino-------------------------#
-ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
 time.sleep(2)
 #--------------------------------------------------------------------------------#
 
@@ -102,7 +102,7 @@ class MainWindow(QMainWindow):
         #self.v = self.graphicslayout.addViewBox(row=1, col=1)
         # Voorbeelddata
         self.graphicslayout.setBackground("#000000FF")
-        self.showFullScreen()
+        #self.showFullScreen()
     
     def updateGraph(self):
         self.curve1.setData(xMouse, yMouse)
@@ -259,7 +259,7 @@ class MainWindow(QMainWindow):
         print("Button state:", checked)
     def create_button6(self):
         
-        self.button6 = QPushButton("filter")# title botton
+        self.button6 = QPushButton("EXIT")# title botton
         self.button6.setFixedSize(204, 150)
         self.proxy6 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy6.setWidget(self.button6)
@@ -276,12 +276,13 @@ class MainWindow(QMainWindow):
             background-color: #232FD7;
             }
             """)
-    def the_button6_was_toggled(self)
+    def the_button6_was_toggled(self):
         QApplication.quit()
 
 #--------------------------------------------------------------------------------#
 
 #---------------------------SERVO-LOGIC------------------------------------------#
+
 # ---------- Configuratie ----------
 SERVO_PIN  = 18         # PWM-capabele GPIO pin
 BUTTON_PIN = 17         # GPIO pin voor de drukknop
@@ -336,20 +337,25 @@ def servoSetup():
 #---------------------------MOVEMENT-LOGIC---------------------------------------#
 #based on lookup table and mouse movement, calculate the correction and apply it to the pen position
 def offset(xMouse, yMouse):
+    servo = False
     if 0 <= yMouse < 297:
-        if lookup[yMouse] != -1:
-            xOffset = lookup[yMouse] - xMouse
-            servoDown()
+        if lookup[int(yMouse)] != -1:
+            xOffset = lookup[int(yMouse)] - xMouse
+            if servo == False:
+                servoDown()
+                servo = True
             return xOffset
         else:
-            servoUp()
+            if servo == True:
+                servoUp()
+                servo = False
             return 0
 #--------------------------------------------------------------------------------#
 
 #---------------------------·LIST-DEVICES-(TROUBLESHOOTING)----------------------#
-# devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-# for device in devices:
-#      print(device.path, device.name, device.phys)
+devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
+for device in devices:
+     print(device.path, device.name, device.phys)
 #--------------------------------------------------------------------------------#
 
 #---------------------------MOUSE-READER-----------------------------------------#
@@ -392,6 +398,7 @@ def mouseReader():
             # print(f"{xAbs:8.2f}| {yAbs:8.2f}")
             xMouse.append(xAbs)
             yMouse.append(yAbs)
+            print(offset(xAbs, yAbs))
 
 def serialReader():
     while True:
@@ -416,7 +423,6 @@ threading.Thread(
     target=serialReader,
     daemon=True
 ).start()
-
 #--------------------------------------------------------------------------------#
 
 #---------------------------------MAIN-------------------------------------------#
