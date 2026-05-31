@@ -15,16 +15,19 @@ from svgpathtools import svg2paths, path
 import matplotlib.pyplot as plt
 
 #-----------------------------------paths----------------------------------------#
-straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo.svg"
-squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
-ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
+straight1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo1.svg"
+straight2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo2.svg"
+squiggly1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly1.svg"
+squiggly2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly2.svg"
+ziggert1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert1.svg"
+ziggert2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert2.svg"
 
 xPath1 = []
 yPath1 = []
 xPath2 = []
 yPath2 = []
 
-def svgToCoord(path):
+def svgToCoord(path1, path2):
     global xPath1, yPath1, xPath2, yPath2
 
     xPath1.clear()
@@ -32,21 +35,45 @@ def svgToCoord(path):
     xPath2.clear()
     yPath2.clear()
 
-    paths, attributes = svg2paths(path)
+    paths, attributes = svg2paths(path1)
 
     path = paths[0]
 
-    for seg_num, segment in enumerate(path):
+    for path in paths:
 
-        xList = xPath1 if seg_num == 0 else xPath2
-        yList = yPath1 if seg_num == 0 else yPath2
+        for segment in path:
 
-        for i in range(100):
-            t = i / 99
-            point = segment.point(t)
+            for i in range(100):
 
-            xList.append(point.real)
-            yList.append(point.imag)
+                t = i / 99
+
+                point = segment.point(t)
+
+                x = point.real
+                y = point.imag
+
+                xPath1.append(x)
+                yPath1.append(y)
+
+    paths, attributes = svg2paths(path2)
+
+    path = paths[0]
+
+    for path in paths:
+
+        for segment in path:
+
+            for i in range(100):
+
+                t = i / 99
+
+                point = segment.point(t)
+
+                x = point.real
+                y = point.imag
+
+                xPath2.append(x)
+                yPath2.append(y)
 #--------------------------------------------------------------------------------#
 
 #-----------------------------------serial-setup-arduino-------------------------#
@@ -109,6 +136,8 @@ class MainWindow(QMainWindow):
         self.p1 = self.graphicslayout.addPlot(row=0, col=0,rowspan =4,colspan=2) #rowspan = aantal rijen hoote
         self.p1.setTitle("Plot 1")
         self.p1.showGrid(x=False, y=False)
+        self.p1.setXRange(0,210, padding = 0)
+        self.p1.setYRange(0,297, padding = 0)
         self.p1.addLegend()
         self.pen1 = pg.mkPen(color=("#FF0000FF"))#line color
         self.pen2 = pg.mkPen(color=("#FFFFFFFF"))#line color
@@ -116,7 +145,7 @@ class MainWindow(QMainWindow):
         self.curve1 = self.p1.plot(xMouse, yMouse, pen=self.pen1,name="Hand")
         self.curve2 = self.p1.plot(xPen, yPen, pen=self.pen2, name="Correction")
         self.curve3 = self.p1.plot(xPath1, yPath1, pen=self.pen3, name="Path")
-        self.curve4 = self.p1.plot(xPath2, yPath2, pen=self.pen3, name="Path")
+        self.curve4 = self.p1.plot(xPath2, yPath2, pen=self.pen3)
         
     def plot2(self):
 
@@ -153,7 +182,7 @@ class MainWindow(QMainWindow):
             """)
     def the_button1_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
-        svgToCoord(straight)
+        svgToCoord(straight1, straight2)
         self.curve3.setData(xPath1, yPath1)
         self.curve4.setData(xPath2, yPath2)
         
@@ -177,7 +206,7 @@ class MainWindow(QMainWindow):
             """)
     def the_button2_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
-        svgToCoord(squiggly)
+        svgToCoord(squiggly1, squiggly2)
         self.curve3.setData(xPath1, yPath1)
         self.curve4.setData(xPath2, yPath2)
 
@@ -202,7 +231,7 @@ class MainWindow(QMainWindow):
             """)
     def the_button3_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         print("Button state:", checked)
-        svgToCoord(ziggert)
+        svgToCoord(ziggert1, ziggert2)
         self.curve3.setData(xPath1, yPath1)
         self.curve4.setData(xPath2, yPath2)
 

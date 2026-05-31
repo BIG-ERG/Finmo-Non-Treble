@@ -1,32 +1,64 @@
 from svgpathtools import svg2paths, path
 import matplotlib.pyplot as plt
 
-straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo.svg"
-squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
-ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
+straight1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo1.svg"
+straight2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/noHomo2.svg"
+squiggly1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly1.svg"
+squiggly2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly2.svg"
+ziggert1 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert1.svg"
+ziggert2 = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert2.svg"
 
+xPath1 = []
+yPath1 = []
+xPath2 = []
+yPath2 = []
 
-paths, attributes = svg2paths(straight)
+def svgToCoords(path1, path2):
+    global xPath1, yPath1, xPath2, yPath2
 
-print(paths)
+    xPath1.clear()
+    yPath1.clear()
+    xPath2.clear()
+    yPath2.clear()
 
-path = paths[0]
+    paths, attributes = svg2paths(path1)
 
-points = []
+    path = paths[0]
 
-for path in paths:
+    for path in paths:
 
-    for segment in path:
+        for segment in path:
 
-        for i in range(100):
+            for i in range(100):
 
-            t = i / 99
+                t = i / 99
 
-            point = segment.point(t)
+                point = segment.point(t)
 
-            x = point.real
-            y = point.imag
+                x = point.real
+                y = point.imag
 
-            points.append(x)
+                xPath1.append(x)
+                yPath1.append(y)
 
-print(paths)
+    paths, attributes = svg2paths(path2)
+
+    path = paths[0]
+
+    for path in paths:
+
+        for segment in path:
+
+            for i in range(100):
+
+                t = i / 99
+
+                point = segment.point(t)
+
+                x = point.real
+                y = point.imag
+
+                xPath2.append(x)
+                yPath2.append(y)
+
+svgToCoords(straight1, straight2)
