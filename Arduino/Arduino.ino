@@ -5,6 +5,13 @@
 // RC Netwerk PID Regelaar - Arduino MEGA 2560
 // Seriële communicatie: 9600 baud
 // Ontvangen: setpoint, Kp, Kd, Ki, regelaar_ingeschakeld, MANUAL
+#include <Servo.h>
+
+Servo servo;
+
+const int servoPin = 9;
+const int servoUp = 0;
+const int servoDown = 0;
 
 const int dir1 = 4;
 const int dir2 = 5;
@@ -40,6 +47,7 @@ void setup() {
   pinMode(dir1, OUTPUT);
   pinMode(dir2, OUTPUT);
   analogWrite(PWM_PIN, 0);
+  servo.attach(servoPin);
 }
 
 void changeDirRight(){
@@ -51,6 +59,12 @@ void changeDirLeft(){
   digitalWrite(dir2, HIGH);  
 }
 
+float mmToAdc(float input){
+  float sliderLength = 60.0;
+  float temp = 1024 / sliderLength;
+  float adc = ((temp * input) + 512.0);
+  return constrain(adc, 0, 1023);
+}
 
 void loop() {
   unsigned long huidigeTijd = millis();
@@ -66,17 +80,21 @@ void loop() {
       // Determine coordinate type
       if (input.startsWith("x:")) {
         x = input.substring(2).toFloat();
+        setpoint = mmToAdc(x);
         // Serial.print("X received: ");
         // Serial.println(x);
       }
-
-      else if (input.startsWith("y:")) {
-        y = input.substring(2).toFloat();
-        // Serial.print("Y received: ");
-        // Serial.println(y);
-      }
-
+      if (input.startsWith("s:")){
+        if(input.substring(2) == 1){
+          servo.write(servoDown);
+          //delay?
+        }
+        else{
+          servo.write(servoUp);
+          //delay?
+        }
       // Clear buffer
+      }
       input = "";
     }
 
