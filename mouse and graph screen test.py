@@ -352,7 +352,13 @@ def mouseReader():
             # print(f"{xAbs:8.2f}| {yAbs:8.2f}")
             xMouse.append(xAbs)
             yMouse.append(yAbs)
-            print(offset(xAbs, yAbs))
+            temp = offset(xAbs, yAbs)
+            if temp > -30 and temp < 30:
+                ser.write(f'x:{temp}\n'.encode())
+                servoDown()
+            else:
+                ser.write(f'x:0\n'.encode())
+                servoUp()
 
 def serialReader():
     while True:
