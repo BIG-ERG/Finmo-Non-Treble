@@ -16,8 +16,8 @@ import RPi.GPIO as GPIO
 xRel = 0
 yRel = 0
 
-xAbs = 0
-yAbs = 0
+xAbs = 50
+yAbs = 50
 #--------------------------------------------------------------------------------#
 
 #-----------------------------------paths----------------------------------------#
@@ -102,7 +102,7 @@ class MainWindow(QMainWindow):
         #self.v = self.graphicslayout.addViewBox(row=1, col=1)
         # Voorbeelddata
         self.graphicslayout.setBackground("#000000FF")
-        #self.showFullScreen()
+        # self.showFullScreen()
     
     def updateGraph(self):
         self.curve1.setData(xMouse, yMouse)
@@ -160,8 +160,14 @@ class MainWindow(QMainWindow):
         print("Button state:", checked)
         svgToCoord(straight)
         self.curve3.setData(xPath, yPath)
-        xAbs = 0 #to be implemented: set xAbs and yAbs to the end point of the path, so that the mouse starts at the end of the path when the button is pressed
-        yAbs = 0
+        tx = len(xPath)
+        ty = len(yPath)
+        xAbs = xPath[tx-1]
+        yAbs = yPath[ty-1]
+        xMouse.clear()
+        yMouse.clear()
+        xPath.clear()
+        yPath.clear()
         
     def create_button2(self):
         
@@ -290,19 +296,12 @@ def servoDown():
 
 #---------------------------MOVEMENT-LOGIC---------------------------------------#
 #based on lookup table and mouse movement, calculate the correction and apply it to the pen position
-def offset(xMouse, yMouse):
-    servo = False
+def xOffset(xMouse, yMouse):
     if 0 <= yMouse < 297:
         if lookup[int(yMouse)] != -1:
-            xOffset = lookup[int(yMouse)] - xMouse
-            if servo == False:
-                servoDown()
-                servo = True
+            xOffset = lookup[int(yMouse)]
             return xOffset
         else:
-            if servo == True:
-                servoUp()
-                servo = False
             return 0
 #--------------------------------------------------------------------------------#
 
@@ -314,7 +313,7 @@ for device in devices:
 
 #---------------------------MOUSE-READER-----------------------------------------#
 
-device = evdev.InputDevice('/dev/input/event4') #change eventn to correct peripheral
+device = evdev.InputDevice('/dev/input/event0') #change eventn to correct peripheral
 
 def cpiToMM(dots):
     CPI = 1000
@@ -349,16 +348,18 @@ def mouseReader():
         if event.type == evdev.ecodes.SYN_REPORT:           #if sync event happens i.e. every time mouse updates
 
             ser.write(f'x:{xAbs}\n'.encode())
-            # print(f"{xAbs:8.2f}| {yAbs:8.2f}")
+            print(f"{xAbs:8.2f}| {yAbs:8.2f}")
             xMouse.append(xAbs)
             yMouse.append(yAbs)
-            temp = offset(xAbs, yAbs)
-            if temp > -30 and temp < 30:
-                ser.write(f'x:{temp}\n'.encode())
-                servoDown()
-            else:
-                ser.write(f'x:0\n'.encode())
-                servoUp()
+            temp = xOffset(xAbs, yAbs)
+            print(xOffset)
+            #ser.write(f'x:{-1*xAbs}\n'.encode())
+            # if temp > -30.0 and temp < 30.0:
+            #     ser.write(f'x:{temp}\n'.encode())
+            #     servoDown()
+            # else:
+            #     ser.write(f'x:0\n'.encode())
+            #     servoUp()
 
 def serialReader():
     while True:
