@@ -9,7 +9,6 @@ import sys
 import threading
 from svgpathtools import svg2paths, path
 import matplotlib.pyplot as plt
-import RPi.GPIO as GPIO
 
 
 #-----------------------------------mouse-setup----------------------------------#
@@ -22,13 +21,18 @@ yAbs = 50
 
 #-----------------------------------paths----------------------------------------#
 #ui cant show hole in path but pen will apply it regardless
-straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/straight.svg"
-squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
-ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
+# straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/straight.svg"
+# squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
+# ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
+
+straight = r"/home/bigerg/Finmo-Non-Treble/svg/straight.svg"
+squiggly = r"/home/bigerg/Finmo-Non-Treble/svg/squiggly.svg"
+ziggert = r"/home/bigerg/Finmo-Non-Treble/svg/ziggert.svg"
 
 xPath = []
 yPath = []
 lookup = []
+lookup [:] = [-1] * 297
 
 def svgToCoord(path):
     global lookup, xPath, yPath
@@ -102,7 +106,7 @@ class MainWindow(QMainWindow):
         #self.v = self.graphicslayout.addViewBox(row=1, col=1)
         # Voorbeelddata
         self.graphicslayout.setBackground("#000000FF")
-        # self.showFullScreen()
+        self.showFullScreen()
     
     def updateGraph(self):
         self.curve1.setData(xMouse, yMouse)
@@ -144,7 +148,7 @@ class MainWindow(QMainWindow):
         self.proxy1 = QGraphicsProxyWidget()
         self.proxy1.setWidget(self.button1)
         self.graphicslayout.addItem(self.proxy1, 2, 2) # row, col , rowspan,colspan
-        self.button1.setCheckable(True)
+        self.button1.setCheckable(False)
         self.button1.clicked.connect(self.the_button1_was_toggled)
         self.button1.setStyleSheet("""
             QPushButton {
@@ -160,10 +164,8 @@ class MainWindow(QMainWindow):
         print("Button state:", checked)
         svgToCoord(straight)
         self.curve3.setData(xPath, yPath)
-        tx = len(xPath)
-        ty = len(yPath)
-        xAbs = xPath[tx-1]
-        yAbs = yPath[ty-1]
+        xAbs = xPath[0]
+        yAbs = yPath[0]
         xMouse.clear()
         yMouse.clear()
         xPath.clear()
@@ -176,7 +178,7 @@ class MainWindow(QMainWindow):
         self.proxy2 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy2.setWidget(self.button2)
         self.graphicslayout.addItem(self.proxy2, 2, 3) # row, col , rowspan,colspan
-        self.button2.setCheckable(True)
+        self.button2.setCheckable(False)
         self.button2.clicked.connect(self.the_button2_was_toggled)
         self.button2.setStyleSheet("""
             QPushButton {
@@ -188,9 +190,16 @@ class MainWindow(QMainWindow):
             }
             """)
     def the_button2_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
+        global xAbs, yAbs
         print("Button state:", checked)
         svgToCoord(squiggly)
         self.curve3.setData(xPath, yPath)
+        xAbs = xPath[0]
+        yAbs = yPath[0]
+        xMouse.clear()
+        yMouse.clear()
+        xPath.clear()
+        yPath.clear()
         
     def create_button3(self):
         
@@ -199,7 +208,7 @@ class MainWindow(QMainWindow):
         self.proxy3 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy3.setWidget(self.button3)
         self.graphicslayout.addItem(self.proxy3, 2, 4) # row, col , rowspan,colspan
-        self.button3.setCheckable(True)
+        self.button3.setCheckable(False)
         self.button3.clicked.connect(self.the_button3_was_toggled)
         self.button3.setStyleSheet("""
             QPushButton {
@@ -211,9 +220,16 @@ class MainWindow(QMainWindow):
             }
             """)
     def the_button3_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
+        global xAbs, yAbs
         print("Button state:", checked)
         svgToCoord(ziggert)
         self.curve3.setData(xPath, yPath)
+        xAbs = xPath[0]
+        yAbs = yPath[0]
+        xMouse.clear()
+        yMouse.clear()
+        xPath.clear()
+        yPath.clear()
 
     def create_button4(self):
         
@@ -222,7 +238,7 @@ class MainWindow(QMainWindow):
         self.proxy4 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy4.setWidget(self.button4)
         self.graphicslayout.addItem(self.proxy4, 3, 2) # row, col , rowspan,colspan
-        self.button4.setCheckable(True)
+        self.button4.setCheckable(False)
         self.button4.clicked.connect(self.the_button4_was_toggled)
         self.button4.setStyleSheet("""
             QPushButton {
@@ -241,7 +257,6 @@ class MainWindow(QMainWindow):
         yPen.clear()
         xMouse.clear()
         yMouse.clear()
-        self.curve3.setData(xPath, yPath)
 
     def create_button5(self):
         
@@ -250,7 +265,7 @@ class MainWindow(QMainWindow):
         self.proxy5 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy5.setWidget(self.button5)
         self.graphicslayout.addItem(self.proxy5, 3, 3) # row, col , rowspan,colspan
-        self.button5.setCheckable(True)
+        self.button5.setCheckable(False)
         self.button5.clicked.connect(self.the_button5_was_toggled)
         self.button5.setStyleSheet("""
             QPushButton {
@@ -270,7 +285,7 @@ class MainWindow(QMainWindow):
         self.proxy6 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy6.setWidget(self.button6)
         self.graphicslayout.addItem(self.proxy6, 3, 4) # row, col , rowspan,colspan
-        self.button6.setCheckable(True)
+        self.button6.setCheckable(False)
         self.button6.clicked.connect(self.the_button6_was_toggled)
         self.button6.setStyleSheet("""
             QPushButton {
@@ -290,19 +305,21 @@ class MainWindow(QMainWindow):
 #---------------------------SERVO-LOGIC------------------------------------------#
 def servoUp():
     ser.write(f'x:1\n'.encode())
+    print('servo up')
 def servoDown():
     ser.write(f'x:0\n'.encode())
+    print('servo down')
 #--------------------------------------------------------------------------------#
 
 #---------------------------MOVEMENT-LOGIC---------------------------------------#
 #based on lookup table and mouse movement, calculate the correction and apply it to the pen position
 def xOffset(xMouse, yMouse):
-    if 0 <= yMouse < 297:
+    if (0 <= yMouse < 297) and (0 <= xMouse < 210):
         if lookup[int(yMouse)] != -1:
-            xOffset = lookup[int(yMouse)]
+            xOffset = lookup[int(yMouse)] - xMouse
             return xOffset
         else:
-            return 0
+            return -31
 #--------------------------------------------------------------------------------#
 
 #---------------------------·LIST-DEVICES-(TROUBLESHOOTING)----------------------#
@@ -313,7 +330,7 @@ for device in devices:
 
 #---------------------------MOUSE-READER-----------------------------------------#
 
-device = evdev.InputDevice('/dev/input/event0') #change eventn to correct peripheral
+device = evdev.InputDevice('/dev/input/event19') #change eventn to correct peripheral
 
 def cpiToMM(dots):
     CPI = 1000
@@ -325,7 +342,7 @@ def adsToMM(input):
     mm = (input * temp) - 30
     return mm
 
-print("xAbs:   |yAbs:    ")
+# print("xAbs:   |yAbs:    ")
 
 def mouseReader():
     global xAbs, yAbs, xRel, yRel
@@ -352,14 +369,13 @@ def mouseReader():
             xMouse.append(xAbs)
             yMouse.append(yAbs)
             temp = xOffset(xAbs, yAbs)
-            print(xOffset)
-            #ser.write(f'x:{-1*xAbs}\n'.encode())
-            # if temp > -30.0 and temp < 30.0:
-            #     ser.write(f'x:{temp}\n'.encode())
-            #     servoDown()
-            # else:
-            #     ser.write(f'x:0\n'.encode())
-            #     servoUp()
+            print(temp)
+            if temp > -30.0 and temp < 30.0:
+                ser.write(f'x:{temp}\n'.encode())
+                servoDown()
+            else:
+                servoUp()
+                ser.write(f'x:0\n'.encode())
 
 def serialReader():
     while True:
