@@ -21,13 +21,13 @@ yAbs = 50
 
 #-----------------------------------paths----------------------------------------#
 #ui cant show hole in path but pen will apply it regardless
-# straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/straight.svg"
-# squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
-# ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
+straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/straight.svg"
+squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
+ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
 
-straight = r"/home/bigerg/Finmo-Non-Treble/svg/straight.svg"
-squiggly = r"/home/bigerg/Finmo-Non-Treble/svg/squiggly.svg"
-ziggert = r"/home/bigerg/Finmo-Non-Treble/svg/ziggert.svg"
+# straight = r"/home/bigerg/Finmo-Non-Treble/svg/straight.svg"
+# squiggly = r"/home/bigerg/Finmo-Non-Treble/svg/squiggly.svg"
+# ziggert = r"/home/bigerg/Finmo-Non-Treble/svg/ziggert.svg"
 
 xPath = []
 yPath = []
@@ -304,10 +304,10 @@ class MainWindow(QMainWindow):
 
 #---------------------------SERVO-LOGIC------------------------------------------#
 def servoUp():
-    ser.write(f'x:1\n'.encode())
+    ser.write(f's:0\n'.encode())
     print('servo up')
 def servoDown():
-    ser.write(f'x:0\n'.encode())
+    ser.write(f's:1\n'.encode())
     print('servo down')
 #--------------------------------------------------------------------------------#
 
@@ -330,7 +330,7 @@ for device in devices:
 
 #---------------------------MOUSE-READER-----------------------------------------#
 
-device = evdev.InputDevice('/dev/input/event19') #change eventn to correct peripheral
+device = evdev.InputDevice('/dev/input/event1') #change eventn to correct peripheral
 
 def cpiToMM(dots):
     CPI = 1000
