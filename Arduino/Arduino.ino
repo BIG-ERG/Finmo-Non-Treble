@@ -9,8 +9,8 @@
 
 Servo servo;
 
-const int servoPin = 9;
-const int servoUp = 0;
+const int servoPin = 12;
+const int servoUp = 50;
 const int servoDown = 0;
 
 const int dir1 = 4;
@@ -48,6 +48,7 @@ void setup() {
   pinMode(dir2, OUTPUT);
   analogWrite(PWM_PIN, 0);
   servo.attach(servoPin);
+  servo.write(servoUp);
 }
 
 void changeDirRight(){
@@ -85,7 +86,7 @@ void loop() {
         // Serial.println(x);
       }
       if (input.startsWith("s:")){
-        if(input.substring(2) == 1){
+        if(input.substring(2).toFloat() == 1){
           servo.write(servoDown);
           //delay?
         }
