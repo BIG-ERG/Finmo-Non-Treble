@@ -58,7 +58,7 @@ def svgToCoord(path):
 
 #-----------------------------------serial-setup-arduino-------------------------#
 ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
-time.sleep(2)
+time.sleep(0.5)
 #--------------------------------------------------------------------------------#
 
 #-----------------------------------UI-setup-------------------------------------#
@@ -67,6 +67,9 @@ yMouse = []
 xMouse = []
 xPen = []
 yPen = []
+
+nowUI = time.perf_counter()
+prvTimeUI = None
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -111,6 +114,17 @@ class MainWindow(QMainWindow):
     def updateGraph(self):
         self.curve1.setData(xMouse, yMouse)
         self.curve2.setData(xPen, yPen)
+
+        #for test 10
+
+        if testingState == 1:
+            global nowUI, prvTimeUI
+            nowUI = time.perf_counter()
+            if prvTimeUI is not None:
+                dt = nowUI - prvTimeUI
+                hz = 1 / dt
+                print(f"Hz UI: {hz:.2f}")
+            prvTimeUI = nowUI
 
     def plot1(self):#plotitem
         self.p1 = self.graphicslayout.addPlot(row=0, col=0,rowspan =4,colspan=2) #rowspan = aantal rijen hoote
@@ -161,7 +175,6 @@ class MainWindow(QMainWindow):
             """)
     def the_button1_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         global xAbs, yAbs
-        print("Button state:", checked)
         svgToCoord(straight)
         self.curve3.setData(xPath, yPath)
         xAbs = xPath[0]
@@ -191,7 +204,6 @@ class MainWindow(QMainWindow):
             """)
     def the_button2_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         global xAbs, yAbs
-        print("Button state:", checked)
         svgToCoord(squiggly)
         self.curve3.setData(xPath, yPath)
         xAbs = xPath[0]
@@ -221,7 +233,6 @@ class MainWindow(QMainWindow):
             """)
     def the_button3_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         global xAbs, yAbs
-        print("Button state:", checked)
         svgToCoord(ziggert)
         self.curve3.setData(xPath, yPath)
         xAbs = xPath[0]
@@ -250,7 +261,6 @@ class MainWindow(QMainWindow):
             }
             """)
     def the_button4_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
-        print("Button state:", checked)
         xPath.clear()
         yPath.clear()
         xPen.clear()
@@ -260,7 +270,7 @@ class MainWindow(QMainWindow):
 
     def create_button5(self):
         
-        self.button5 = QPushButton("calibration")# title botton
+        self.button5 = QPushButton("Testing")# title botton
         self.button5.setFixedSize(204, 150)
         self.proxy5 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy5.setWidget(self.button5)
@@ -277,7 +287,9 @@ class MainWindow(QMainWindow):
             }
             """)
     def the_button5_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
-        print("Button state:", checked)
+        testing(1)
+        self.showMinimized()
+
     def create_button6(self):
         
         self.button6 = QPushButton("EXIT")# title botton
@@ -302,13 +314,22 @@ class MainWindow(QMainWindow):
 
 #--------------------------------------------------------------------------------#
 
+#---------------------------VERBOSE----------------------------------------------#
+testingState = 0
+
+def testing(state):
+    if state == 1:
+        print("Testing mode enabled")
+    else:
+        print("Testing mode disabled")
+
+#--------------------------------------------------------------------------------#
+
 #---------------------------SERVO-LOGIC------------------------------------------#
 def servoUp():
     ser.write(f's:0\n'.encode())
-    print('servo up')
 def servoDown():
     ser.write(f's:1\n'.encode())
-    print('servo down')
 #--------------------------------------------------------------------------------#
 
 #---------------------------MOVEMENT-LOGIC---------------------------------------#
@@ -344,8 +365,13 @@ def adsToMM(input):
 
 # print("xAbs:   |yAbs:    ")
 
+prvTimeMouse = None
+nowMouse = time.perf_counter()
+
 def mouseReader():
     global xAbs, yAbs, xRel, yRel
+
+
     for event in device.read_loop():
 
         if event.type == ecodes.EV_KEY:
@@ -369,13 +395,23 @@ def mouseReader():
             xMouse.append(xAbs)
             yMouse.append(yAbs)
             temp = xOffset(xAbs, yAbs)
-            print(temp)
             if temp > -30.0 and temp < 30.0:
                 ser.write(f'x:{temp}\n'.encode())
                 servoDown()
             else:
                 servoUp()
                 ser.write(f'x:0\n'.encode())
+
+            #for test 2
+            if testingState == 1:
+                dt = nowMouse - prvTimeMouse
+                hz = 1 / dt
+                print(f"Hz Mouse: {hz:.2f}")
+                prvTimeMouse = nowMouse
+
+                
+prvTimeEF = None
+nowEF = time.perf_counter()
 
 def serialReader():
     while True:
@@ -385,6 +421,19 @@ def serialReader():
             value = float(line)
             xPen.append(adsToMM(value)+xAbs)
             yPen.append(yAbs)
+
+            #for test 1
+            if testingState == 1:
+                dt = nowEF - prvTimeEF
+                hz = 1 / dt
+                print(f"Hz End-Effector: {hz:.2f}")
+                prvTimeEF = nowEF
+
+            #for test 9
+            if testingState == 1:
+                dt = nowMouse - nowEF
+                print(f"Latency: {dt*1000:.2f} ms")
+
         except ValueError:
             pass
 
