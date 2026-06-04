@@ -19,6 +19,19 @@ xAbs = 50
 yAbs = 50
 #--------------------------------------------------------------------------------#
 
+#---------------------------VERBOSE----------------------------------------------#
+testingState = 0
+
+def testing(state):
+    global testingState
+    testingState = state
+    if state == 1:
+        print("Testing mode enabled")
+    else:
+        print("Testing mode disabled")
+
+#--------------------------------------------------------------------------------#
+
 #-----------------------------------paths----------------------------------------#
 #ui cant show hole in path but pen will apply it regardless
 straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/straight.svg"
@@ -117,7 +130,7 @@ class MainWindow(QMainWindow):
 
         #for test 10
 
-        if testingState == 1:
+        if testingState == 2:
             global nowUI, prvTimeUI
             nowUI = time.perf_counter()
             if prvTimeUI is not None:
@@ -314,17 +327,6 @@ class MainWindow(QMainWindow):
 
 #--------------------------------------------------------------------------------#
 
-#---------------------------VERBOSE----------------------------------------------#
-testingState = 0
-
-def testing(state):
-    if state == 1:
-        print("Testing mode enabled")
-    else:
-        print("Testing mode disabled")
-
-#--------------------------------------------------------------------------------#
-
 #---------------------------SERVO-LOGIC------------------------------------------#
 def servoUp():
     ser.write(f's:0\n'.encode())
@@ -351,7 +353,7 @@ for device in devices:
 
 #---------------------------MOUSE-READER-----------------------------------------#
 
-device = evdev.InputDevice('/dev/input/event1') #change eventn to correct peripheral
+device = evdev.InputDevice('/dev/input/event4') #change eventn to correct peripheral
 
 def cpiToMM(dots):
     CPI = 1000
@@ -366,17 +368,20 @@ def adsToMM(input):
 # print("xAbs:   |yAbs:    ")
 
 prvTimeMouse = None
-nowMouse = time.perf_counter()
+nowMouse = time.perf_counter
+latency = None
+packetSent = None
+packetReceived = None
 
 def mouseReader():
-    global xAbs, yAbs, xRel, yRel
+    global xAbs, yAbs, xRel, yRel, prvTimeMouse, testingState, nowMouse, latency, packetSent
 
 
     for event in device.read_loop():
 
         if event.type == ecodes.EV_KEY:
             if event.code == ecodes.BTN_RIGHT and event.value == 1:
-                print("Right click detected — stopping")
+                print("Right click detected stopping")
                 break
 
         if event.type == evdev.ecodes.EV_REL:               #if movement
@@ -390,33 +395,42 @@ def mouseReader():
 
         if event.type == evdev.ecodes.SYN_REPORT:           #if sync event happens i.e. every time mouse updates
 
-            ser.write(f'x:{xAbs}\n'.encode())
-            print(f"{xAbs:8.2f}| {yAbs:8.2f}")
+            # ser.write(f'x:{xAbs}\n'.encode())
+            # print(f"{xAbs:8.2f}| {yAbs:8.2f}")
+
+            #for test 2
+            if testingState == 1:
+                nowMouse = time.perf_counter()
+
+                if prvTimeMouse is not None:
+                    hz = 1.0 / (nowMouse - prvTimeMouse)
+                    # print(f"Hz Mouse: {hz:.2f}")
+
+                prvTimeMouse = nowMouse
+
             xMouse.append(xAbs)
             yMouse.append(yAbs)
             temp = xOffset(xAbs, yAbs)
             if temp > -30.0 and temp < 30.0:
                 ser.write(f'x:{temp}\n'.encode())
+                if latency == 0:
+                    packetSent = time.perf_counter()
                 servoDown()
             else:
                 servoUp()
-                ser.write(f'x:0\n'.encode())
-
-            #for test 2
-            if testingState == 1:
-                dt = nowMouse - prvTimeMouse
-                hz = 1 / dt
-                print(f"Hz Mouse: {hz:.2f}")
-                prvTimeMouse = nowMouse
-
+                ser.write(f'x:0\n'.encode())#BOOSDOENER
                 
 prvTimeEF = None
 nowEF = time.perf_counter()
 
 def serialReader():
+    global prvTimeEF, nowEF, nowMouse, testingState, latency, packetReceived, packetSent
+    prvLine = 0
     while True:
         line = ser.readline().decode().strip()
-
+        if line is not prvLine:
+            packetReceived = time.perf_counter()
+            prvLine = line
         try:
             value = float(line)
             xPen.append(adsToMM(value)+xAbs)
@@ -424,15 +438,22 @@ def serialReader():
 
             #for test 1
             if testingState == 1:
-                dt = nowEF - prvTimeEF
-                hz = 1 / dt
-                print(f"Hz End-Effector: {hz:.2f}")
+                nowEF = time.perf_counter()
+
+                if prvTimeEF is not None:
+                    hz = 1.0 / (nowEF - prvTimeEF)
+                    # print(f"Hz EF: {hz:.2f}")
+
                 prvTimeEF = nowEF
 
-            #for test 9
+            # for test 9
             if testingState == 1:
-                dt = nowMouse - nowEF
-                print(f"Latency: {dt*1000:.2f} ms")
+                if packetReceived is not None and packetSent is not None:
+                    packetReceived = time.perf_counter()
+                    dt = packetReceived - packetSent
+                    print(f"Latency: {dt*1000:.2f} ms")
+                    latency = 0
+                    packetReceived = None
 
         except ValueError:
             pass
