@@ -353,7 +353,7 @@ for device in devices:
 
 #---------------------------MOUSE-READER-----------------------------------------#
 
-device = evdev.InputDevice('/dev/input/event4') #change eventn to correct peripheral
+device = evdev.InputDevice('/dev/input/event0') #change eventn to correct peripheral
 
 def cpiToMM(dots):
     CPI = 1000
@@ -418,7 +418,7 @@ def mouseReader():
                 servoDown()
             else:
                 servoUp()
-                ser.write(f'x:0\n'.encode())#BOOSDOENER
+                #ser.write(f'x:0\n'.encode())#BOOSDOENER
                 
 prvTimeEF = None
 nowEF = time.perf_counter()
