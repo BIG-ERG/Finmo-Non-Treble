@@ -134,7 +134,7 @@ void loop() {
       // Zet om naar PWM (0-255)
       int pwmWaarde = (int)(output /5 * 255);
       analogWrite(PWM_PIN, pwmWaarde);
-      if (millis() - vorigeSerialTijd > 95) {
+      if (millis() - vorigeSerialTijd > 200) {
           Serial.println(analogRead(analogPin));
           vorigeSerialTijd = millis();
       }
