@@ -45,26 +45,32 @@ ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
 xPath = []
 yPath = []
 lookup = []
-lookup [:] = [-1] * 297
+lookup [:] = [-1] * 2970
 
 def svgToCoord(path):
     global lookup, xPath, yPath
     lookup.clear()
     xPath.clear()
     yPath.clear()   
-    lookup[:] = [-1] * 297
+    lookup[:] = [-1] * 2970
 
     paths, _ = svg2paths(path)
 
-    for path in paths:
+    for path in paths:                      #for ui
         for segment in path:
             for i in range(100):
                 t = i / 99
                 pt = segment.point(t)
-                y_mm = round(pt.imag)
                 xPath.append(pt.real)
                 yPath.append(pt.imag)
-                if 0 <= y_mm < 297:
+    
+    for path in paths:                      #for lookup table
+        for segment in path:                #we want a higher resolution while keeping the scale normal for the ui
+            for i in range(1000):
+                t = i / 999
+                pt = segment.point(t)
+                y_mm = round(pt.imag*10)
+                if 0 <= y_mm < 2970:
                     lookup[y_mm] = pt.real
 
 #--------------------------------------------------------------------------------#
@@ -189,13 +195,13 @@ class MainWindow(QMainWindow):
     def the_button1_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         global xAbs, yAbs
         svgToCoord(straight)
-        self.curve3.setData(xPath, yPath)
         xAbs = xPath[0]
         yAbs = yPath[0]
         xMouse.clear()
         yMouse.clear()
         xPath.clear()
         yPath.clear()
+        self.curve3.setData(xPath, yPath)
         
     def create_button2(self):
         
@@ -218,14 +224,14 @@ class MainWindow(QMainWindow):
     def the_button2_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         global xAbs, yAbs
         svgToCoord(squiggly)
-        self.curve3.setData(xPath, yPath)
         xAbs = xPath[0]
         yAbs = yPath[0]
         xMouse.clear()
         yMouse.clear()
         xPath.clear()
         yPath.clear()
-        
+        self.curve3.setData(xPath, yPath)
+
     def create_button3(self):
         
         self.button3 = QPushButton("Zig-Zag")# title botton
@@ -247,13 +253,13 @@ class MainWindow(QMainWindow):
     def the_button3_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
         global xAbs, yAbs
         svgToCoord(ziggert)
-        self.curve3.setData(xPath, yPath)
         xAbs = xPath[0]
         yAbs = yPath[0]
         xMouse.clear()
         yMouse.clear()
         xPath.clear()
         yPath.clear()
+        self.curve3.setData(xPath, yPath)
 
     def create_button4(self):
         
@@ -337,9 +343,10 @@ def servoDown():
 #---------------------------MOVEMENT-LOGIC---------------------------------------#
 #based on lookup table and mouse movement, calculate the correction and apply it to the pen position
 def xOffset(xMouse, yMouse):
+    global lookup
     if (0 <= yMouse < 297) and (0 <= xMouse < 210):
-        if lookup[int(yMouse)] != -1:
-            xOffset = lookup[int(yMouse)] - xMouse
+        if lookup[int(yMouse*10)] != -1:
+            xOffset = lookup[int(yMouse*10)] - xMouse
             return xOffset
         else:
             return -31
@@ -353,7 +360,7 @@ for device in devices:
 
 #---------------------------MOUSE-READER-----------------------------------------#
 
-device = evdev.InputDevice('/dev/input/event0') #change eventn to correct peripheral
+device = evdev.InputDevice('/dev/input/event19') #change eventn to correct peripheral
 
 def cpiToMM(dots):
     CPI = 1000
@@ -411,14 +418,13 @@ def mouseReader():
             xMouse.append(xAbs)
             yMouse.append(yAbs)
             temp = xOffset(xAbs, yAbs)
+
             if temp > -30.0 and temp < 30.0:
                 ser.write(f'x:{temp}\n'.encode())
-                if latency == 0:
-                    packetSent = time.perf_counter()
                 servoDown()
             else:
                 servoUp()
-                #ser.write(f'x:0\n'.encode())#BOOSDOENER
+                #implement look ahead logic
                 
 prvTimeEF = None
 nowEF = time.perf_counter()
@@ -428,9 +434,6 @@ def serialReader():
     prvLine = 0
     while True:
         line = ser.readline().decode().strip()
-        if line is not prvLine:
-            packetReceived = time.perf_counter()
-            prvLine = line
         try:
             value = float(line)
             xPen.append(adsToMM(value)+xAbs)
