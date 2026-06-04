@@ -32,26 +32,27 @@ ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
 xPath = []
 yPath = []
 lookup = []
-lookup [:] = [-1] * 297
+lookup [:] = [-1] * 2970
 
 def svgToCoord(path):
     global lookup, xPath, yPath
     lookup.clear()
     xPath.clear()
     yPath.clear()   
-    lookup[:] = [-1] * 297
+    lookup[:] = [-1] * 2970
 
     paths, _ = svg2paths(path)
 
+    N = 1000
     for path in paths:
         for segment in path:
-            for i in range(100):
-                t = i / 99
+            for i in range(N):
+                t = i / (N - 1)
                 pt = segment.point(t)
-                y_mm = round(pt.imag)
+                y_mm = round(pt.imag*10)
                 xPath.append(pt.real)
                 yPath.append(pt.imag)
-                if 0 <= y_mm < 297:
+                if 0 <= y_mm < 2970:
                     lookup[y_mm] = pt.real
 
 #--------------------------------------------------------------------------------#
