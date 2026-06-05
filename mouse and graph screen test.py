@@ -86,6 +86,8 @@ yMouse = []
 xMouse = []
 xPen = []
 yPen = []
+xOffset = []
+yOffset = []
 
 nowUI = time.perf_counter()
 prvTimeUI = None
@@ -133,6 +135,8 @@ class MainWindow(QMainWindow):
     def updateGraph(self):
         self.curve1.setData(xMouse, yMouse)
         self.curve2.setData(xPen, yPen)
+        self.curve4.setData(xOffset, yOffset)
+        self.curve5.setData(xPen, yPen)
 
         #for test 10
 
@@ -168,11 +172,8 @@ class MainWindow(QMainWindow):
         self.p2.addLegend()
         self.pen4 = pg.mkPen(color=("#FFFF00FF"))#line color
         self.pen5 = pg.mkPen(color=("#FF9900FF"))#line color
-        x = [1, 2, 3, 4]
-        y1 = [4, 1, 3, 2]
-        y2 = [2, 1, 4, 1]
-        self.p2.plot(x, y1, pen=self.pen4,name="divertion")
-        self.p2.plot(x, y2, pen=self.pen5,name="correction")
+        self.curve4 = self.p2.plot(xOffset, yOffset, pen=self.pen1,name="Offset")
+        self.curve5 = self.p2.plot(xPen, yPen, pen=self.pen2, name="Correction")
     
     def create_button1(self):
         
@@ -201,6 +202,8 @@ class MainWindow(QMainWindow):
         yMouse.clear()
         xPath.clear()
         yPath.clear()
+        xOffset.clear()
+        yOffset.clear()
         self.curve3.setData(xPath, yPath)
         
     def create_button2(self):
@@ -230,6 +233,8 @@ class MainWindow(QMainWindow):
         yMouse.clear()
         xPath.clear()
         yPath.clear()
+        xOffset.clear()
+        yOffset.clear()
         self.curve3.setData(xPath, yPath)
 
     def create_button3(self):
@@ -259,6 +264,8 @@ class MainWindow(QMainWindow):
         yMouse.clear()
         xPath.clear()
         yPath.clear()
+        xOffset.clear()
+        yOffset.clear()
         self.curve3.setData(xPath, yPath)
 
     def create_button4(self):
@@ -381,7 +388,7 @@ packetSent = None
 packetReceived = None
 
 def mouseReader():
-    global xAbs, yAbs, xRel, yRel, prvTimeMouse, testingState, nowMouse, latency, packetSent
+    global xAbs, yAbs, xRel, yRel, xOffset, prvTimeMouse, testingState, nowMouse, latency, packetSent
 
 
     for event in device.read_loop():
@@ -418,6 +425,7 @@ def mouseReader():
             xMouse.append(xAbs)
             yMouse.append(yAbs)
             temp = xOffset(xAbs, yAbs)
+            xOffset.append(temp)
 
             if temp > -30.0 and temp < 30.0:
                 ser.write(f'x:{temp}\n'.encode())
@@ -438,6 +446,7 @@ def serialReader():
             value = float(line)
             xPen.append(adsToMM(value)+xAbs)
             yPen.append(yAbs)
+            yOffset.append(yAbs)
 
             #for test 1
             if testingState == 1:
