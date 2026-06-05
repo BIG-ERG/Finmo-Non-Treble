@@ -86,8 +86,8 @@ yMouse = []
 xMouse = []
 xPen = []
 yPen = []
-xOffset = []
-yOffset = []
+xOffsetB = []
+yOffsetB = []
 
 nowUI = time.perf_counter()
 prvTimeUI = None
@@ -135,8 +135,8 @@ class MainWindow(QMainWindow):
     def updateGraph(self):
         self.curve1.setData(xMouse, yMouse)
         self.curve2.setData(xPen, yPen)
-        self.curve4.setData(xOffset, yOffset)
-        self.curve5.setData(xPen, yPen)
+        self.curve4.setData(yOffsetB, xOffsetB)
+        self.curve5.setData(yPen, xPen)
 
         #for test 10
 
@@ -170,10 +170,12 @@ class MainWindow(QMainWindow):
         self.p2.setTitle("Plot 2")
         self.p2.showGrid(x=True, y=True)
         self.p2.addLegend()
+        self.p1.setXRange(0,297, padding = 0)
+        self.p1.setYRange(-30,30, padding = 0)
         self.pen4 = pg.mkPen(color=("#FFFF00FF"))#line color
         self.pen5 = pg.mkPen(color=("#FF9900FF"))#line color
-        self.curve4 = self.p2.plot(xOffset, yOffset, pen=self.pen1,name="Offset")
-        self.curve5 = self.p2.plot(xPen, yPen, pen=self.pen2, name="Correction")
+        self.curve4 = self.p2.plot(yOffsetB, xOffsetB, pen=self.pen4,name="Offset")
+        self.curve5 = self.p2.plot(yPen, xPen, pen=self.pen5, name="Correction")
     
     def create_button1(self):
         
@@ -202,8 +204,8 @@ class MainWindow(QMainWindow):
         yMouse.clear()
         xPath.clear()
         yPath.clear()
-        xOffset.clear()
-        yOffset.clear()
+        xOffsetB.clear()
+        yOffsetB.clear()
         self.curve3.setData(xPath, yPath)
         
     def create_button2(self):
@@ -233,8 +235,8 @@ class MainWindow(QMainWindow):
         yMouse.clear()
         xPath.clear()
         yPath.clear()
-        xOffset.clear()
-        yOffset.clear()
+        xOffsetB.clear()
+        yOffsetB.clear()
         self.curve3.setData(xPath, yPath)
 
     def create_button3(self):
@@ -264,8 +266,8 @@ class MainWindow(QMainWindow):
         yMouse.clear()
         xPath.clear()
         yPath.clear()
-        xOffset.clear()
-        yOffset.clear()
+        xOffsetB.clear()
+        yOffsetB.clear()
         self.curve3.setData(xPath, yPath)
 
     def create_button4(self):
@@ -367,7 +369,7 @@ for device in devices:
 
 #---------------------------MOUSE-READER-----------------------------------------#
 
-device = evdev.InputDevice('/dev/input/event19') #change eventn to correct peripheral
+device = evdev.InputDevice('/dev/input/event4') #change eventn to correct peripheral
 
 def cpiToMM(dots):
     CPI = 1000
@@ -425,7 +427,6 @@ def mouseReader():
             xMouse.append(xAbs)
             yMouse.append(yAbs)
             temp = xOffset(xAbs, yAbs)
-            xOffset.append(temp)
 
             if temp > -30.0 and temp < 30.0:
                 ser.write(f'x:{temp}\n'.encode())
@@ -446,7 +447,8 @@ def serialReader():
             value = float(line)
             xPen.append(adsToMM(value)+xAbs)
             yPen.append(yAbs)
-            yOffset.append(yAbs)
+            xOffsetB.append(xOffset(xAbs, yAbs))
+            yOffsetB.append(yAbs)
 
             #for test 1
             if testingState == 1:
