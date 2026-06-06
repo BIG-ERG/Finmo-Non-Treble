@@ -22,18 +22,23 @@ measure = 0
 timeUI = []
 timeMouse = []
 timeEF = [1]
+penDeviation = []
 
 def clearMeasurements():
-    global timeUI, timeMouse, timeEF
+    global timeUI, timeMouse, timeEF, penDeviation
     timeUI.clear()
     timeMouse.clear()
     timeEF.clear()
+    penDeviation.clear()
 
 def printMeasurements():
-    global timeUI, timeMouse, timeEF
+    global timeUI, timeMouse, timeEF, penDeviation
     print(f"Hz UI: {np.mean(timeUI)}")
     print(f"Hz mouse: {np.mean(timeMouse)}")
     print(f"Hz pen: {np.mean(timeEF)}")
+    print(f"Average pen deviation: {np.mean(penDeviation)}")
+    print(f"Max pen deviation: {max(penDeviation)}")
+    print(f"Min pen deviation: {min(penDeviation)}")
     clearMeasurements()
 
 #--------------------------------------------------------------------------------#
@@ -51,13 +56,13 @@ direction = 0
 
 #-----------------------------------paths----------------------------------------#
 #ui cant show hole in path but pen will apply it regardless
-# straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/straight.svg"
-# squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
-# ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
+straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/straight.svg"
+squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
+ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
 
-straight = r"/home/bigerg/Finmo-Non-Treble/svg/straight.svg"
-squiggly = r"/home/bigerg/Finmo-Non-Treble/svg/squiggly.svg"
-ziggert = r"/home/bigerg/Finmo-Non-Treble/svg/ziggert.svg"
+# straight = r"/home/bigerg/Finmo-Non-Treble/svg/straight.svg"
+# squiggly = r"/home/bigerg/Finmo-Non-Treble/svg/squiggly.svg"
+# ziggert = r"/home/bigerg/Finmo-Non-Treble/svg/ziggert.svg"
 
 xPath = []
 yPath = []
@@ -438,12 +443,19 @@ class MainWindow(QMainWindow):
 #--------------------------------------------------------------------------------#
 
 #---------------------------SERVO-LOGIC------------------------------------------#
+servoState = 0      # to avoid spamming serial buffer with servo commands
+
 def servoUp():
-    # ser.write(f's:0\n'.encode())
-    None
+    global servoState
+    if servoState == 0:
+        ser.write(f's:0\n'.encode())
+        state = 1
+
 def servoDown():
-    # ser.write(f's:1\n'.encode())
-    None
+    global servoState
+    if servoState == 1:
+        ser.write(f's:1\n'.encode())
+        state = 0
 #--------------------------------------------------------------------------------#
 
 #---------------------------MOVEMENT-LOGIC---------------------------------------#
@@ -482,9 +494,6 @@ def adsToMM(input):
 
 prvTimeMouse = None
 nowMouse = time.perf_counter
-latency = None
-packetSent = None
-packetReceived = None
 
 def mouseReader():
     global xAbs, yAbs, xRel, yRel, prvTimeMouse, measure, nowMouse, yPath, direction
@@ -552,13 +561,14 @@ prvTimeEF = None
 nowEF = time.perf_counter()
 
 def serialReader():
-    global prvTimeEF, nowEF, nowMouse, measure
+    global prvTimeEF, nowEF, nowMouse, measure, penDeviation
     while True:
         line = ser.readline().decode().strip()
         try:
             value = float(line)
             xPen.append(adsToMM(value)+xAbs)
             yPen.append(yAbs)
+            penDeviation.append(xOffset(adsToMM(value)+xAbs, yAbs))
 
             #for test 1
             if measure == 1:
@@ -581,10 +591,10 @@ threading.Thread(
     daemon = True
 ).start()
 
-# threading.Thread(
-#     target=serialReader,
-#     daemon=True
-# ).start()
+threading.Thread(
+    target=serialReader,
+    daemon=True
+).start()
 #--------------------------------------------------------------------------------#
 
 #---------------------------------MAIN-------------------------------------------#
