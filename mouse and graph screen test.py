@@ -1,14 +1,42 @@
+import numpy as np
 import evdev
 from evdev import ecodes
 import serial
 import time
 import pyqtgraph as pg
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton,QWidget,QGridLayout,QGraphicsProxyWidget
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton,QWidget,QGridLayout,QGraphicsProxyWidget, QVBoxLayout, QLineEdit, QLabel, QDoubleSpinBox
 from PyQt6.QtCore import QTimer
 import sys
 import threading
 from svgpathtools import svg2paths, path
 import matplotlib.pyplot as plt
+
+#---------------------------------PID-GAINS--------------------------------------#
+gainP = 0
+gainI = 0
+gainD = 0
+#--------------------------------------------------------------------------------#
+
+#-----------------------------------testplan-measurements------------------------#
+measure = 0
+timeUI = []
+timeMouse = []
+timeEF = [1]
+
+def clearMeasurements():
+    global timeUI, timeMouse, timeEF
+    timeUI.clear()
+    timeMouse.clear()
+    timeEF.clear()
+
+def printMeasurements():
+    global timeUI, timeMouse, timeEF
+    print(f"Hz UI: {np.mean(timeUI)}")
+    print(f"Hz mouse: {np.mean(timeMouse)}")
+    print(f"Hz pen: {np.mean(timeEF)}")
+    clearMeasurements()
+
+#--------------------------------------------------------------------------------#
 
 
 #-----------------------------------mouse-setup----------------------------------#
@@ -17,38 +45,29 @@ yRel = 0
 
 xAbs = 50
 yAbs = 50
-#--------------------------------------------------------------------------------#
 
-#---------------------------VERBOSE----------------------------------------------#
-testingState = 0
-
-def testing(state):
-    global testingState
-    testingState = state
-    if state == 1:
-        print("Testing mode enabled")
-    else:
-        print("Testing mode disabled")
-
+direction = 0
 #--------------------------------------------------------------------------------#
 
 #-----------------------------------paths----------------------------------------#
 #ui cant show hole in path but pen will apply it regardless
-straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/straight.svg"
-squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
-ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
+# straight = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/straight.svg"
+# squiggly = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/squiggly.svg"
+# ziggert = r"/home/user/Documents/ProjectFinmo/Finmo-Non-Treble/svg/ziggert.svg"
 
-# straight = r"/home/bigerg/Finmo-Non-Treble/svg/straight.svg"
-# squiggly = r"/home/bigerg/Finmo-Non-Treble/svg/squiggly.svg"
-# ziggert = r"/home/bigerg/Finmo-Non-Treble/svg/ziggert.svg"
+straight = r"/home/bigerg/Finmo-Non-Treble/svg/straight.svg"
+squiggly = r"/home/bigerg/Finmo-Non-Treble/svg/squiggly.svg"
+ziggert = r"/home/bigerg/Finmo-Non-Treble/svg/ziggert.svg"
 
 xPath = []
 yPath = []
 lookup = []
 lookup [:] = [-1] * 2970
+path1End = 0
+path2Start = 0
 
 def svgToCoord(path):
-    global lookup, xPath, yPath
+    global lookup, xPath, yPath, path1End, path2Start
     lookup.clear()
     xPath.clear()
     yPath.clear()   
@@ -73,11 +92,37 @@ def svgToCoord(path):
                 if 0 <= y_mm < 2970:
                     lookup[y_mm] = pt.real
 
+    # Find all indices where value != -1
+    valid = [i for i, v in enumerate(lookup) if v != -1]
+    
+    # Find the largest gap between consecutive valid indices
+    gaps = [(valid[i+1] - valid[i], i) for i in range(len(valid)-1)]
+    _, gap_idx = max(gaps)
+    
+    left_i = valid[gap_idx]
+    right_i = valid[gap_idx + 1]
+    
+    path1End = lookup[left_i]
+    path2Start = lookup[right_i]
+
+    print(path1End)
+    print(path2Start)
+
+
 #--------------------------------------------------------------------------------#
 
 #-----------------------------------serial-setup-arduino-------------------------#
-ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
-time.sleep(0.5)
+# ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+# time.sleep(0.5)
+#--------------------------------------------------------------------------------#
+
+#---------------------------------TROUBLESHOOTING--------------------------------#
+def sendPIDgains():
+    global gainP, gainI, gainD
+    ser.write(f'p:{gainP}\n'.encode())
+    ser.write(f'i:{gainI}\n'.encode())
+    ser.write(f'd:{gainD}\n'.encode())
+
 #--------------------------------------------------------------------------------#
 
 #-----------------------------------UI-setup-------------------------------------#
@@ -92,12 +137,60 @@ yOffsetB = []
 nowUI = time.perf_counter()
 prvTimeUI = None
 
+class TroubleshootWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Troubleshooting")
+        self.resize(200, 200)
+
+        layout = QVBoxLayout()
+
+        layout.addWidget(QLabel("Gain P"))
+        self.input1 = QDoubleSpinBox()
+        layout.addWidget(self.input1)
+
+        layout.addWidget(QLabel("Gain I"))
+        self.input2 =  QDoubleSpinBox()
+        layout.addWidget(self.input2)
+
+        layout.addWidget(QLabel("Gain D"))
+        self.input3 =  QDoubleSpinBox()
+        layout.addWidget(self.input3)
+
+        self.sendbutton = QPushButton("Send Gains")
+        self.sendbutton.clicked.connect(self.applySettings)
+        self.joltbutton = QPushButton("Jolt")
+        self.joltbutton.clicked.connect(self.jolt)
+
+        layout.addWidget(self.sendbutton)
+        layout.addWidget(self.joltbutton)
+
+        self.setLayout(layout)
+
+    def applySettings(self):
+        global gainP, gainI, gainD
+        gainP = self.input1.value()
+        gainI = self.input2.value()
+        gainD = self.input3.value()
+        sendPIDgains()
+
+    def jolt(self):
+        state = 0
+        if state == 0:
+            ser.write(f'x:{-20.0}\n'.encode())
+            state = 1
+        else:
+            ser.write(f'x:{20}\n'.encode())
+            state = 0
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("UI")
         self.setFixedSize(1024, 600) #size of window
         self.graphicslayout = pg.GraphicsLayoutWidget()
+        self.troubleshootWindow = None
         
         self.timer = QTimer()
         self.timer.timeout.connect(self.updateGraph)
@@ -140,13 +233,13 @@ class MainWindow(QMainWindow):
 
         #for test 10
 
-        if testingState == 2:
+        if measure == 1:
             global nowUI, prvTimeUI
             nowUI = time.perf_counter()
             if prvTimeUI is not None:
                 dt = nowUI - prvTimeUI
                 hz = 1 / dt
-                print(f"Hz UI: {hz:.2f}")
+                timeUI.append(hz)
             prvTimeUI = nowUI
 
     def plot1(self):#plotitem
@@ -170,8 +263,8 @@ class MainWindow(QMainWindow):
         self.p2.setTitle("Plot 2")
         self.p2.showGrid(x=True, y=True)
         self.p2.addLegend()
-        self.p1.setXRange(0,297, padding = 0)
-        self.p1.setYRange(-30,30, padding = 0)
+        self.p2.setXRange(-200,-90, padding = 0)
+        self.p2.setYRange(-30,30, padding = 0)
         self.pen4 = pg.mkPen(color=("#FFFF00FF"))#line color
         self.pen5 = pg.mkPen(color=("#FF9900FF"))#line color
         self.curve4 = self.p2.plot(yOffsetB, xOffsetB, pen=self.pen4,name="Offset")
@@ -196,17 +289,16 @@ class MainWindow(QMainWindow):
             }
             """)
     def the_button1_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
-        global xAbs, yAbs
+        global xAbs, yAbs, measure, lookup
         svgToCoord(straight)
         xAbs = xPath[0]
         yAbs = yPath[0]
         xMouse.clear()
         yMouse.clear()
-        xPath.clear()
-        yPath.clear()
         xOffsetB.clear()
         yOffsetB.clear()
         self.curve3.setData(xPath, yPath)
+        measure = 1
         
     def create_button2(self):
         
@@ -233,11 +325,10 @@ class MainWindow(QMainWindow):
         yAbs = yPath[0]
         xMouse.clear()
         yMouse.clear()
-        xPath.clear()
-        yPath.clear()
         xOffsetB.clear()
         yOffsetB.clear()
         self.curve3.setData(xPath, yPath)
+        measure = 1
 
     def create_button3(self):
         
@@ -264,11 +355,10 @@ class MainWindow(QMainWindow):
         yAbs = yPath[0]
         xMouse.clear()
         yMouse.clear()
-        xPath.clear()
-        yPath.clear()
         xOffsetB.clear()
         yOffsetB.clear()
         self.curve3.setData(xPath, yPath)
+        measure = 1
 
     def create_button4(self):
         
@@ -289,6 +379,9 @@ class MainWindow(QMainWindow):
             }
             """)
     def the_button4_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
+        global measure
+        measure = 0
+        printMeasurements()
         xPath.clear()
         yPath.clear()
         xPen.clear()
@@ -298,7 +391,7 @@ class MainWindow(QMainWindow):
 
     def create_button5(self):
         
-        self.button5 = QPushButton("Testing")# title botton
+        self.button5 = QPushButton("Troubleshooting")# title botton
         self.button5.setFixedSize(204, 150)
         self.proxy5 = QGraphicsProxyWidget() # to set buttons in black
         self.proxy5.setWidget(self.button5)
@@ -315,8 +408,10 @@ class MainWindow(QMainWindow):
             }
             """)
     def the_button5_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
-        testing(1)
-        self.showMinimized()
+        if self.troubleshootWindow is None:
+                self.troubleshootWindow = TroubleshootWindow()
+
+        self.troubleshootWindow.show()
 
     def create_button6(self):
         
@@ -344,9 +439,11 @@ class MainWindow(QMainWindow):
 
 #---------------------------SERVO-LOGIC------------------------------------------#
 def servoUp():
-    ser.write(f's:0\n'.encode())
+    # ser.write(f's:0\n'.encode())
+    None
 def servoDown():
-    ser.write(f's:1\n'.encode())
+    # ser.write(f's:1\n'.encode())
+    None
 #--------------------------------------------------------------------------------#
 
 #---------------------------MOVEMENT-LOGIC---------------------------------------#
@@ -358,7 +455,7 @@ def xOffset(xMouse, yMouse):
             xOffset = lookup[int(yMouse*10)] - xMouse
             return xOffset
         else:
-            return -31
+            return False
 #--------------------------------------------------------------------------------#
 
 #---------------------------·LIST-DEVICES-(TROUBLESHOOTING)----------------------#
@@ -369,7 +466,7 @@ for device in devices:
 
 #---------------------------MOUSE-READER-----------------------------------------#
 
-device = evdev.InputDevice('/dev/input/event4') #change eventn to correct peripheral
+device = evdev.InputDevice('/dev/input/event19') #change eventn to correct peripheral
 
 def cpiToMM(dots):
     CPI = 1000
@@ -390,7 +487,7 @@ packetSent = None
 packetReceived = None
 
 def mouseReader():
-    global xAbs, yAbs, xRel, yRel, xOffset, prvTimeMouse, testingState, nowMouse, latency, packetSent
+    global xAbs, yAbs, xRel, yRel, prvTimeMouse, measure, nowMouse, yPath, direction
 
 
     for event in device.read_loop():
@@ -408,6 +505,10 @@ def mouseReader():
             elif event.code == evdev.ecodes.REL_Y:          #if movement y
                 yRel = cpiToMM(event.value)
                 yAbs -= yRel
+                if yRel < 0:
+                    direction = 1
+                else:
+                    direction = -1
 
         if event.type == evdev.ecodes.SYN_REPORT:           #if sync event happens i.e. every time mouse updates
 
@@ -415,12 +516,12 @@ def mouseReader():
             # print(f"{xAbs:8.2f}| {yAbs:8.2f}")
 
             #for test 2
-            if testingState == 1:
+            if measure == 1:
                 nowMouse = time.perf_counter()
 
                 if prvTimeMouse is not None:
                     hz = 1.0 / (nowMouse - prvTimeMouse)
-                    # print(f"Hz Mouse: {hz:.2f}")
+                    timeMouse.append(hz)
 
                 prvTimeMouse = nowMouse
 
@@ -429,45 +530,45 @@ def mouseReader():
             temp = xOffset(xAbs, yAbs)
 
             if temp > -30.0 and temp < 30.0:
-                ser.write(f'x:{temp}\n'.encode())
+                # ser.write(f'x:{temp}\n'.encode())
+                xOffsetB.append(temp)
+                yOffsetB.append(yAbs*-1)
                 servoDown()
-            else:
+            elif temp < -30.0 and temp > 30.0:
                 servoUp()
-                #implement look ahead logic
-                
+                xOffsetB.append(0)
+                yOffsetB.append(yAbs*-1)
+            elif temp == False:
+                servoUp()
+                xOffsetB.append(0)
+                yOffsetB.append(yAbs*-1)
+                if direction > 0:
+                    ser.write(f'x:{path1End - xAbs}\n'.encode())
+                else:
+                    ser.write(f'x:{path2Start - xAbs}\n'.encode())
+
+
 prvTimeEF = None
 nowEF = time.perf_counter()
 
 def serialReader():
-    global prvTimeEF, nowEF, nowMouse, testingState, latency, packetReceived, packetSent
-    prvLine = 0
+    global prvTimeEF, nowEF, nowMouse, measure
     while True:
         line = ser.readline().decode().strip()
         try:
             value = float(line)
             xPen.append(adsToMM(value)+xAbs)
             yPen.append(yAbs)
-            xOffsetB.append(xOffset(xAbs, yAbs))
-            yOffsetB.append(yAbs)
 
             #for test 1
-            if testingState == 1:
+            if measure == 1:
                 nowEF = time.perf_counter()
 
                 if prvTimeEF is not None:
                     hz = 1.0 / (nowEF - prvTimeEF)
-                    # print(f"Hz EF: {hz:.2f}")
+                    timeEF.append(hz)
 
                 prvTimeEF = nowEF
-
-            # for test 9
-            if testingState == 1:
-                if packetReceived is not None and packetSent is not None:
-                    packetReceived = time.perf_counter()
-                    dt = packetReceived - packetSent
-                    print(f"Latency: {dt*1000:.2f} ms")
-                    latency = 0
-                    packetReceived = None
 
         except ValueError:
             pass
@@ -480,10 +581,10 @@ threading.Thread(
     daemon = True
 ).start()
 
-threading.Thread(
-    target=serialReader,
-    daemon=True
-).start()
+# threading.Thread(
+#     target=serialReader,
+#     daemon=True
+# ).start()
 #--------------------------------------------------------------------------------#
 
 #---------------------------------MAIN-------------------------------------------#
