@@ -24,11 +24,11 @@
      inkscape:deskcolor="#505050"
      inkscape:document-units="mm"
      inkscape:zoom="1.0806047"
-     inkscape:cx="396.53725"
-     inkscape:cy="561.25984"
-     inkscape:window-width="2560"
-     inkscape:window-height="1494"
-     inkscape:window-x="-11"
+     inkscape:cx="396.53724"
+     inkscape:cy="562.18523"
+     inkscape:window-width="2880"
+     inkscape:window-height="1514"
+     inkscape:window-x="3829"
      inkscape:window-y="-11"
      inkscape:window-maximized="1"
      inkscape:current-layer="layer1" />
@@ -39,7 +39,7 @@
      inkscape:groupmode="layer"
      id="layer1">
     <path
-       d="m 105.00015,196.12515 v -15.875 l -15.875007,-15.875 13.229167,-13.22917 m 5.29167,-5.29166 13.22916,-13.22917 -15.87499,-15.875 v -15.875"
+       d="m 105.00013,196.12515 v -15.875 l 15.87501,-15.875 -13.22917,-13.22917 m -5.29167,-5.29166 -13.22916,-13.22917 15.87499,-15.875 v -15.875"
        style="fill:none;stroke:#000000;stroke-width:0.132292;stroke-linecap:round;stroke-linejoin:round"
        id="path1" />
   </g>

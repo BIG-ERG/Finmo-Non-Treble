@@ -94,6 +94,15 @@ void loop() {
           servo.write(servoUp);
           //delay?
         }
+      if (input.startsWith("p:")) {
+        Kp = input.substring(2).toFloat();
+      }
+      if (input.startsWith("i:")) {
+        Ki = input.substring(2).toFloat();
+      }
+      if (input.startsWith("d:")) {
+        Kd = input.substring(2).toFloat();
+      }
       // Clear buffer
       }
       input = "";
