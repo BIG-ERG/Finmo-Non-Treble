@@ -21,7 +21,7 @@ gainD = 0
 measure = 0
 timeUI = []
 timeMouse = []
-timeEF = [1]
+timeEF = []
 penDeviation = []
 
 def clearMeasurements():
@@ -117,8 +117,8 @@ def svgToCoord(path):
 #--------------------------------------------------------------------------------#
 
 #-----------------------------------serial-setup-arduino-------------------------#
-# ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
-# time.sleep(0.5)
+ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)
+time.sleep(0.5)
 #--------------------------------------------------------------------------------#
 
 #---------------------------------TROUBLESHOOTING--------------------------------#
@@ -324,7 +324,7 @@ class MainWindow(QMainWindow):
             }
             """)
     def the_button2_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
-        global xAbs, yAbs
+        global xAbs, yAbs, measure
         svgToCoord(squiggly)
         xAbs = xPath[0]
         yAbs = yPath[0]
@@ -354,7 +354,7 @@ class MainWindow(QMainWindow):
             }
             """)
     def the_button3_was_toggled(self, checked): #checked gives button pressed or not pressed (true/False)
-        global xAbs, yAbs
+        global xAbs, yAbs, measure
         svgToCoord(ziggert)
         xAbs = xPath[0]
         yAbs = yPath[0]
@@ -443,19 +443,19 @@ class MainWindow(QMainWindow):
 #--------------------------------------------------------------------------------#
 
 #---------------------------SERVO-LOGIC------------------------------------------#
-servoState = 0      # to avoid spamming serial buffer with servo commands
+servoState = None     # to avoid spamming serial buffer with servo commands
 
 def servoUp():
     global servoState
-    if servoState == 0:
+    if servoState != 1:
         ser.write(f's:0\n'.encode())
-        state = 1
+        servostate = 1
 
 def servoDown():
     global servoState
-    if servoState == 1:
+    if servoState != 0:
         ser.write(f's:1\n'.encode())
-        state = 0
+        servostate = 0
 #--------------------------------------------------------------------------------#
 
 #---------------------------MOVEMENT-LOGIC---------------------------------------#
@@ -478,7 +478,7 @@ for device in devices:
 
 #---------------------------MOUSE-READER-----------------------------------------#
 
-device = evdev.InputDevice('/dev/input/event19') #change eventn to correct peripheral
+device = evdev.InputDevice('/dev/input/event0') #change eventn to correct peripheral
 
 def cpiToMM(dots):
     CPI = 1000
@@ -538,15 +538,18 @@ def mouseReader():
             yMouse.append(yAbs)
             temp = xOffset(xAbs, yAbs)
 
-            if temp > -30.0 and temp < 30.0:
-                # ser.write(f'x:{temp}\n'.encode())
-                xOffsetB.append(temp)
-                yOffsetB.append(yAbs*-1)
-                servoDown()
-            elif temp < -30.0 and temp > 30.0:
-                servoUp()
-                xOffsetB.append(0)
-                yOffsetB.append(yAbs*-1)
+            if temp != False:
+                if temp > -30.0 and temp < 30.0:
+                    ser.write(f'x:{temp}\n'.encode())
+                    xOffsetB.append(temp)
+                    yOffsetB.append(yAbs*-1)
+                    servoDown()
+                    print("inside path")
+                else:
+                    servoUp()
+                    xOffsetB.append(0)
+                    yOffsetB.append(yAbs*-1)
+                    print('outside path')
             elif temp == False:
                 servoUp()
                 xOffsetB.append(0)
@@ -555,6 +558,7 @@ def mouseReader():
                     ser.write(f'x:{path1End - xAbs}\n'.encode())
                 else:
                     ser.write(f'x:{path2Start - xAbs}\n'.encode())
+                print('hole')
 
 
 prvTimeEF = None
