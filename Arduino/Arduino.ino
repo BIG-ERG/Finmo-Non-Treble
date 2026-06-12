@@ -41,6 +41,9 @@ String input = "";
 float x = 0;
 float y = 0;
 
+const int buttonPin = 13;
+int buttonState = 1;
+
 void setup() {
   Serial.begin(115200);
   pinMode(PWM_PIN, OUTPUT);
@@ -49,6 +52,7 @@ void setup() {
   analogWrite(PWM_PIN, 0);
   servo.attach(servoPin);
   servo.write(servoUp);
+  pinMode(buttonPin, INPUT);
 }
 
 void changeDirRight(){
@@ -69,85 +73,88 @@ float mmToAdc(float input){
 
 void loop() {
   unsigned long huidigeTijd = millis();
+  buttonState = digitalRead(buttonPin);
 
   // Lees seriële data
-  while (Serial.available()) {
+  if (buttonState == 1){
+    while (Serial.available()) {
 
-    char c = Serial.read();
+      char c = Serial.read();
 
-    // End of message
-    if (c == '\n') {
+      // End of message
+      if (c == '\n') {
 
-      // Determine coordinate type
-      if (input.startsWith("x:")) {
-        x = input.substring(2).toFloat();
-        setpoint = mmToAdc(x);
-        // Serial.print("X received: ");
-        // Serial.println(x);
-      }
-      if (input.startsWith("s:")){
-        if(input.substring(2).toFloat() == 1){
-          servo.write(servoDown);
-          //delay?
+        // Determine coordinate type
+        if (input.startsWith("x:")) {
+          x = input.substring(2).toFloat();
+          setpoint = mmToAdc(x);
+          // Serial.print("X received: ");
+          // Serial.println(x);
         }
-        else{
-          servo.write(servoUp);
-          //delay?
+        if (input.startsWith("s:")){
+          if(input.substring(2).toFloat() == 1){
+            servo.write(servoDown);
+          }
+          else{
+            servo.write(servoUp);
+          }
+        if (input.startsWith("p:")) {
+          Kp = input.substring(2).toFloat();
         }
-      if (input.startsWith("p:")) {
-        Kp = input.substring(2).toFloat();
+        if (input.startsWith("i:")) {
+          Ki = input.substring(2).toFloat();
+        }
+        if (input.startsWith("d:")) {
+          Kd = input.substring(2).toFloat();
+        }
+        // Clear buffer
+        }
+        input = "";
       }
-      if (input.startsWith("i:")) {
-        Ki = input.substring(2).toFloat();
+
+      else {
+        input += c;
       }
-      if (input.startsWith("d:")) {
-        Kd = input.substring(2).toFloat();
-      }
-      // Clear buffer
-      }
-      input = "";
     }
 
-    else {
-      input += c;
+
+
+    // PID regelaar
+    if (regelaar_ingeschakeld) {
+      float dt = (huidigeTijd - vorigeTijd) / 1000.0;
+      if (dt > 0) {
+        float fout  = setpoint - analogRead(analogPin);
+        
+        if(fout < 0){
+          changeDirRight();
+        }
+        if(fout > 0){
+          changeDirLeft();
+        }
+
+        // Integraal met anti-windup
+        integraal += fout * dt;
+        integraal = constrain(integraal, -5.0, 5.0);
+
+        // Afgeleide
+        float afgeleide = 0.8 * vorige_afgeleide + 0.2 * ((fout - vorige_fout) / dt);
+        vorige_afgeleide = afgeleide;
+
+        // PID output
+        output = constrain(abs(Kp * fout + Ki * integraal + Kd * afgeleide), 0, 5);
+
+        // Zet om naar PWM (0-255)
+        int pwmWaarde = (int)(output /5 * 255);
+        analogWrite(PWM_PIN, pwmWaarde);
+        if (millis() - vorigeSerialTijd > 200) {
+            Serial.println(analogRead(analogPin));
+            vorigeSerialTijd = millis();
+        }
+      }
     }
+    vorigeTijd = huidigeTijd;
   }
-
-
-  // PID regelaar
-  if (regelaar_ingeschakeld) {
-    float dt = (huidigeTijd - vorigeTijd) / 1000.0;
-    if (dt > 0) {
-      float fout  = setpoint - analogRead(analogPin);
-      
-      if(fout < 0){
-        changeDirRight();
-      }
-      if(fout > 0){
-        changeDirLeft();
-      }
-
-
-
-      // Integraal met anti-windup
-      integraal += fout * dt;
-      integraal = constrain(integraal, -5.0, 5.0);
-
-      // Afgeleide
-      float afgeleide = 0.8 * vorige_afgeleide + 0.2 * ((fout - vorige_fout) / dt);
-      vorige_afgeleide = afgeleide;
-
-      // PID output
-      output = constrain(abs(Kp * fout + Ki * integraal + Kd * afgeleide), 0, 5);
-
-      // Zet om naar PWM (0-255)
-      int pwmWaarde = (int)(output /5 * 255);
-      analogWrite(PWM_PIN, pwmWaarde);
-      if (millis() - vorigeSerialTijd > 200) {
-          Serial.println(analogRead(analogPin));
-          vorigeSerialTijd = millis();
-      }
-    }
+  else{
+    servo.write(servoUp);
   }
-  vorigeTijd = huidigeTijd;
 }
